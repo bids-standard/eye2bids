@@ -1,3 +1,64 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
+
+[project]
+authors = [{name = "eye2bids developers"}]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved",
+    "Programming Language :: Python",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+dependencies = [
+    "numpy",
+    "pandas"
+]
+description = "eyetracking data bids converter in Python"
+dynamic = ["version"]
+license = {text = "MIT"}
+name = "eye2bids"
+readme = "README.md"
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+# A combination of dependencies useful for developers
+dev = [
+    "eye2bids[test,doc]",
+    "isort",
+    "black",
+    "flake8",
+    "flake8-use-fstring",
+    "flake8-functions",
+    "flake8-docstrings",
+    'codespell',
+    'tomli',
+    'pre-commit'
+]
+# Requirements necessary for building the documentation
+doc = [
+    "myst-parser",
+    "numpydoc",
+    "sphinx",
+    "sphinx-copybutton"
+]
+# For running unit and docstring tests
+test = [
+    "coverage",
+    "pytest",
+    "pytest-cov"
+]
+
 [tool.black]
 line-length = 90
 
@@ -5,8 +66,22 @@ line-length = 90
 ignore-words = ".github/codespell_ignore_words.txt"
 skip = "./.git,.mypy_cache,env,venv,*/tmp,./doc/_build"
 
+[tool.hatch.build.hooks.vcs]
+version-file = "eye2bids/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["eye2bids"]
+
+[tool.hatch.version]
+source = "vcs"
+
 [tool.isort]
 combine_as_imports = true
 line_length = 90
 profile = "black"
 skip_gitignore = true
+
+[tool.pytest.ini_options]
+addopts = "-ra -q -vv --cov eye2bids"
+norecursedirs = "data"
+testpaths = ["tests/"]

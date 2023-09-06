@@ -2,6 +2,10 @@ tests/data/test_data.zip
 **/*.asc
 **/*.edf
 **/*.EDF
+eye2bids/_version.py
+
+# General
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
