@@ -1,0 +1,24 @@
+---
+#manual_metadata
+
+#Required, fill according to BIDS specification:
+SampleCoordinateUnits: !!str  
+SampleCoordinateSystem: !!str 
+EnvironmentCoordinates: !!str 
+ScreenDistance: 
+ScreenRefreshRate: 
+ScreenSize: 
+InstitutionName: !!str 
+InstitutionAddress: !!str 
+
+#Recommended, leave empty if not available:
+SoftwareVersion: !!str 
+ScreenAOIDefinition: 
+EyeCameraSettings:
+EyeTrackerDistance:
+FeatureDetectionSettings:
+GazeMappingSettings:
+RawDataFilters:
+
+...
+
