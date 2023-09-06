@@ -34,6 +34,7 @@ requires-python = ">=3.8"
 [project.optional-dependencies]
 # A combination of dependencies useful for developers
 dev = [
+    "eye2bids[test,doc]",
     "isort",
     "black",
     "flake8",

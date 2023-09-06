@@ -1,0 +1,23 @@
+# ignoring this might speed up build
+# by preventing passing extra content to the docker daemon
+
+
+# General
+.DS_Store
+
+.github
+.vscode
+
+**/data
+**/docs
+**/tests
+**/*.zip
+**/*.asc
+**/*.edf
+**/*.EDF
+
+**/build
+.pytest_cache
+.mypy_cache
+coverage_html
+.coverage

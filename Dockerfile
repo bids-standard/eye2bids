@@ -7,6 +7,8 @@ RUN apt-get update -qq \
                   curl \
                   gcc \
                   gnupg2 \
+                  pip \
+                  python3 \
                   software-properties-common \
            && rm -rf /var/lib/apt/lists/*
 RUN apt-key adv --fetch-keys https://apt.sr-research.com/SRResearch_key && add-apt-repository 'deb [arch=amd64] https://apt.sr-research.com SRResearch main'
@@ -14,6 +16,11 @@ RUN apt-get update -qq \
            && apt-get install -y -q --no-install-recommends \
                   eyelink-display-software \
            && rm -rf /var/lib/apt/lists/*
+RUN mkdir /eye2bids
+COPY [".", \
+      "/eye2bids"]
+WORKDIR /eye2bids
+RUN pip install .[dev]
 
 # Save specification to JSON.
 RUN printf '{ \
@@ -36,7 +43,9 @@ RUN printf '{ \
           "curl", \
           "gcc", \
           "ca-certificates", \
-          "software-properties-common" \
+          "software-properties-common", \
+          "python3", \
+          "pip" \
         ], \
         "opts": null \
       } \
@@ -44,7 +53,7 @@ RUN printf '{ \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "apt-get update -qq \\\\\\n    && apt-get install -y -q --no-install-recommends \\\\\\n           ca-certificates \\\\\\n           curl \\\\\\n           gcc \\\\\\n           gnupg2 \\\\\\n           software-properties-common \\\\\\n    && rm -rf /var/lib/apt/lists/*" \
+        "command": "apt-get update -qq \\\\\\n    && apt-get install -y -q --no-install-recommends \\\\\\n           ca-certificates \\\\\\n           curl \\\\\\n           gcc \\\\\\n           gnupg2 \\\\\\n           pip \\\\\\n           python3 \\\\\\n           software-properties-common \\\\\\n    && rm -rf /var/lib/apt/lists/*" \
       } \
     }, \
     { \
@@ -66,6 +75,34 @@ RUN printf '{ \
       "name": "run", \
       "kwds": { \
         "command": "apt-get update -qq \\\\\\n    && apt-get install -y -q --no-install-recommends \\\\\\n           eyelink-display-software \\\\\\n    && rm -rf /var/lib/apt/lists/*" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "mkdir /eye2bids" \
+      } \
+    }, \
+    { \
+      "name": "copy", \
+      "kwds": { \
+        "source": [ \
+          ".", \
+          "/eye2bids" \
+        ], \
+        "destination": "/eye2bids" \
+      } \
+    }, \
+    { \
+      "name": "workdir", \
+      "kwds": { \
+        "path": "/eye2bids" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "pip install .[dev]" \
       } \
     } \
   ] \
