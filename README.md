@@ -4,15 +4,28 @@
 
 ### Requirements
 
-- edf file by EyeLink Eye Tracker
 - Python3
+
 - EyeLink Developers Kit. Download from [SR-Research support forum] (forum registration required)
+
+- Input data:
+
+Those can be:
+
+    - edf file by EyeLink Eye Tracker
+
+You can install uur test data from OSF by running the following command:
+
+```bash
+python tools/download_test_data.py
+```
+
 - manual_metadata.yml file (find template and an example in conversion_json folder)
 
 ### Run code
 
-```
-python3 edf2bids_json.py
+```bash
+python edf2bids_json.py
 ```
 
 [SR-Research support forum]: https://www.sr-research.com/support/forum-9.html

@@ -1,7 +1,7 @@
 ---
-#manual_metadata
+# manual_metadata
 
-#Required, fill according to BIDS specification:
+# Required, fill according to BIDS specification:
 SampleCoordinateUnits: ''
 SampleCoordinateSystem: ''
 EnvironmentCoordinates: ''
@@ -11,7 +11,7 @@ ScreenSize:
 InstitutionName: ''
 InstitutionAddress: ''
 
-#Recommended, leave empty if not available:
+# Recommended, leave empty if not available:
 SoftwareVersion: ''
 ScreenAOIDefinition:
 EyeCameraSettings:
