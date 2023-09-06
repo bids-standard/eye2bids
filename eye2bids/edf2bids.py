@@ -8,12 +8,15 @@ import pandas as pd
 import yaml
 from yaml.loader import SafeLoader
 
+from eye2bids._parser import global_parser
 
-def main():
+
+def main(input_file=None, metadata_file=None, output_dir=None):
     """Convert edf to tsv + json."""
     # CONVERSION events
 
-    input_file = input("Enter the edf file path: ")
+    if input_file is None:
+        input_file = input("Enter the edf file path: ")
     if os.path.exists(input_file):
         print("The file exists")
     else:
@@ -34,8 +37,8 @@ Please enter the required metadata manually
 before loading the file in a next step."""
     )
 
-    metadata_file = input("Enter the file path to the metadata.yml file: ")
-
+    if metadata_file is None:
+        metadata_file = input("Enter the file path to the metadata.yml file: ")
     if os.path.exists(metadata_file):
         print("The file exists")
     else:
@@ -197,8 +200,8 @@ before loading the file in a next step."""
     )  # TODO:figure out if this is actually the StopTime meant by the specification
 
     # to json
-
-    out_filepath = input("Enter the output directory: ")
+    if output_dir is None:
+        output_dir = input("Enter the output directory: ")
 
     eyetrack_json = {
         "Manufacturer": "SR-Research",
@@ -228,7 +231,7 @@ before loading the file in a next step."""
         "StopTime": StopTime,
     }
 
-    with open(out_filepath + "eyetrack.json", "w") as outfile:
+    with open(output_dir + "eyetrack.json", "w") as outfile:
         json.dump(eyetrack_json, outfile, indent=15)
 
     events_json = {
@@ -243,9 +246,15 @@ before loading the file in a next step."""
         },
     }
 
-    with open(out_filepath + "events.json", "w") as outfile:
+    with open(output_dir + "events.json", "w") as outfile:
         json.dump(events_json, outfile, indent=9)
 
 
 if __name__ == "__main__":
-    main()
+    parser = global_parser()
+    args = parser.parse_args()
+    main(
+        input_file=args.input_file,
+        metadata_file=args.metadata_file,
+        output_dir=args.output_dir,
+    )

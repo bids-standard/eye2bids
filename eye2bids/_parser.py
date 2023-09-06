@@ -1,7 +1,7 @@
 import argparse
 
 
-def parser():
+def global_parser():
     """Parse command line arguments.
 
     Returns
@@ -13,3 +13,4 @@ def parser():
     parser.add_argument("--input_file", type=str)
     parser.add_argument("--metadata_file", type=str)
     parser.add_argument("--output_dir", type=str)
+    return parser
