@@ -13,52 +13,52 @@ def main():
     """Convert edf to tsv + json."""
     # CONVERSION events
 
-    edf_filepath = input("Enter the edf file path: ")
-    if os.path.exists(edf_filepath):
+    input_file = input("Enter the edf file path: ")
+    if os.path.exists(input_file):
         print("The file exists")
     else:
         raise FileNotFoundError("No such file or directory")
 
-    subprocess.run(["edf2asc", "-y", "-e", edf_filepath, edf_filepath + "_events"])
-    asc_file = edf_filepath + "_events.asc"
+    subprocess.run(["edf2asc", "-y", "-e", input_file, input_file + "_events"])
+    asc_file = input_file + "_events.asc"
 
     with open(asc_file) as f:
         events = f.readlines()
 
     # Read variables from the additional metadata txt file
     print(
-        """Load the manual_metadata.yml file with the additional metadata.\n
+        """Load the metadata.yml file with the additional metadata.\n
 This file must contain at least the additional REQUIRED metadata
 in the format specified in the BIDS specification.\n
 Please enter the required metadata manually
 before loading the file in a next step."""
     )
 
-    manual_metadata = input("Enter the file path to the manual_metadata.yml file: ")
+    metadata_file = input("Enter the file path to the metadata.yml file: ")
 
-    if os.path.exists(manual_metadata):
+    if os.path.exists(metadata_file):
         print("The file exists")
     else:
         raise FileNotFoundError("No such file or directory")
 
-    with open(manual_metadata) as f:
-        data = yaml.load(f, Loader=SafeLoader)
+    with open(metadata_file) as f:
+        metadata = yaml.load(f, Loader=SafeLoader)
 
-    SampleCoordinateUnits = data["SampleCoordinateUnits"]
-    SampleCoordinateSystem = data["SampleCoordinateSystem"]
-    EnvironmentCoordinates = data["EnvironmentCoordinates"]
-    ScreenDistance = data["ScreenDistance"]
-    ScreenRefreshRate = data["ScreenRefreshRate"]
-    ScreenSize = data["ScreenSize"]
-    InstitutionName = data["InstitutionName"]
-    InstitutionAddress = data["InstitutionAddress"]
-    SoftwareVersion = data["SoftwareVersion"]
-    ScreenAOIDefinition = data["ScreenAOIDefinition"]
-    EyeCameraSettings = data["EyeCameraSettings"]
-    EyeTrackerDistance = data["EyeTrackerDistance"]
-    FeatureDetectionSettings = data["FeatureDetectionSettings"]
-    GazeMappingSettings = data["GazeMappingSettings"]
-    RawDataFilters = data["RawDataFilters"]
+    SampleCoordinateUnits = metadata["SampleCoordinateUnits"]
+    SampleCoordinateSystem = metadata["SampleCoordinateSystem"]
+    EnvironmentCoordinates = metadata["EnvironmentCoordinates"]
+    ScreenDistance = metadata["ScreenDistance"]
+    ScreenRefreshRate = metadata["ScreenRefreshRate"]
+    ScreenSize = metadata["ScreenSize"]
+    InstitutionName = metadata["InstitutionName"]
+    InstitutionAddress = metadata["InstitutionAddress"]
+    SoftwareVersion = metadata["SoftwareVersion"]
+    ScreenAOIDefinition = metadata["ScreenAOIDefinition"]
+    EyeCameraSettings = metadata["EyeCameraSettings"]
+    EyeTrackerDistance = metadata["EyeTrackerDistance"]
+    FeatureDetectionSettings = metadata["FeatureDetectionSettings"]
+    GazeMappingSettings = metadata["GazeMappingSettings"]
+    RawDataFilters = metadata["RawDataFilters"]
 
     # Prepare asc file
     # dataframe for events, all
