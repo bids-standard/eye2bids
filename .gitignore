@@ -2,6 +2,7 @@ tests/data/test_data.zip
 **/*.asc
 **/*.edf
 **/*.EDF
+eye2bids/_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
