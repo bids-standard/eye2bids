@@ -1,11 +1,11 @@
 """Download test data from OSF, unzip and install in the correct location."""
 
 import os
-import zipfile
 import shutil
-import requests
-
+import zipfile
 from pathlib import Path
+
+import requests
 
 download_url = "https://files.de-1.osf.io/v1/resources/jdv7n/providers/osfstorage/?zip="
 
@@ -30,5 +30,3 @@ with open(output_file, "wb") as f:
 with zipfile.ZipFile(output_file, "r") as zip_ref:
     zip_ref.extractall(output_dir / ".")
     os.remove(output_file)
-
-

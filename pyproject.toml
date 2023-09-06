@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 90
+
+[tool.codespell]
+ignore-words = ".github/codespell_ignore_words.txt"
+skip = "./.git,.mypy_cache,env,venv,*/tmp,./doc/_build"
+
+[tool.isort]
+combine_as_imports = true
+line_length = 90
+profile = "black"
+skip_gitignore = true

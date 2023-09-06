@@ -10,6 +10,7 @@
 - manual_metadata.yml file (find template and an example in conversion_json folder)
 
 ### Run code
+
 ```
 python3 edf2bids_json.py
 ```
