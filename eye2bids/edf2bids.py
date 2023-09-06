@@ -198,7 +198,7 @@ before loading the file in a next step."""
 
     # to json
 
-    out_filepath = input("Enter the subject file path: ")
+    out_filepath = input("Enter the output directory: ")
 
     eyetrack_json = {
         "Manufacturer": "SR-Research",
