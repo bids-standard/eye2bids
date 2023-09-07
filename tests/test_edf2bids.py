@@ -9,7 +9,10 @@ from eye2bids.edf2bids import (
     _extract_CalibrationPosition,
     _extract_CalibrationType,
     _extract_CalibrationUnit,
+    _extract_DeviceSerialNumber,
     _extract_EyeTrackingMethod,
+    _extract_PupilFitMethod,
+    _extract_RecordedEye,
     _extract_SamplingFrequency,
     _extract_ScreenResolution,
     _load_asc_file,
@@ -227,3 +230,60 @@ def test_extract_SamplingFrequency(folder, expected):
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_SamplingFrequency(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", "ELLIPSE"),
+        ("emg", "ELLIPSE"),
+        ("lt", "CENTROID"),
+        ("pitracker", "CENTROID"),
+        ("rest", "CENTROID"),
+        ("satf", "CENTROID"),
+        ("vergence", "CENTROID"),
+    ],
+)
+def test_extract_PupilFitMethod(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
+    assert _extract_PupilFitMethod(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", "CLG-BBF01"),
+        ("emg", "CLG-BBF01"),
+        ("lt", "CLG-BCC29"),
+        ("pitracker", "CLG-BAF22"),
+        ("rest", "CLO-ZBD04"),
+        ("satf", "CL1-ACF05"),
+        ("vergence", "CL1-72N02"),
+    ],
+)
+def test_extract_DeviceSerialNumber(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    events = _load_asc_file(asc_file)
+    assert _extract_DeviceSerialNumber(events) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", "Right"),
+        ("emg", "Right"),
+        ("lt", "Left"),
+        ("pitracker", "Right"),
+        ("rest", "Left"),
+        ("satf", "Right"),
+        ("vergence", "Both"),
+    ],
+)
+def test_extract_RecordedEye(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
+    assert _extract_RecordedEye(df_ms_reduced) == expected
