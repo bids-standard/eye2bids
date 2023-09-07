@@ -28,6 +28,14 @@ def _check_inputs(
         raise FileNotFoundError(f"No such file: {input_file}")
 
     if metadata_file is None:
+        # Read variables from the additional metadata txt file
+        print(
+            """Load the metadata.yml file with the additional metadata.\n
+    This file must contain at least the additional REQUIRED metadata
+    in the format specified in the BIDS specification.\n
+    Please enter the required metadata manually
+    before loading the file in a next step."""
+        )
         metadata_file = input("Enter the file path to the metadata.yml file: ")
     if isinstance(metadata_file, str):
         metadata_file = Path(metadata_file)
@@ -48,80 +56,44 @@ def _check_inputs(
     return input_file, metadata_file, output_dir
 
 
+def _check_edf2asc_present() -> bool:
+    """Check if edf2asc is present in the path."""
+    try:
+        subprocess.run(["edf2asc"])
+        return True
+    except FileNotFoundError:
+        print("edf2asc not found in path")
+        return False
+
+
 def main(
     input_file: str | Path | None = None,
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
 ):
     """Convert edf to tsv + json."""
-    # CONVERSION events
+    if not _check_edf2asc_present():
+        return
 
+    # CONVERSION events
     input_file, metadata_file, output_dir = _check_inputs(
         input_file, metadata_file, output_dir
     )
 
-    subprocess.run(["edf2asc", "-y", "-e", input_file, str(input_file) + "_events"])
-    asc_file = str(input_file) + "_events.asc"
+    subprocess.run(["edf2asc", "-y", "-e", input_file, f"{str(input_file)}_events"])
 
+    # Prepare asc file
+    asc_file = f"{str(input_file)}_events.asc"
     with open(asc_file) as f:
         events = f.readlines()
 
-    # Read variables from the additional metadata txt file
-    print(
-        """Load the metadata.yml file with the additional metadata.\n
-This file must contain at least the additional REQUIRED metadata
-in the format specified in the BIDS specification.\n
-Please enter the required metadata manually
-before loading the file in a next step."""
-    )
-
-    with open(metadata_file) as f:
-        metadata = yaml.load(f, Loader=SafeLoader)
-
-    SampleCoordinateUnits = metadata["SampleCoordinateUnits"]
-    SampleCoordinateSystem = metadata["SampleCoordinateSystem"]
-    EnvironmentCoordinates = metadata["EnvironmentCoordinates"]
-    ScreenDistance = metadata["ScreenDistance"]
-    ScreenRefreshRate = metadata["ScreenRefreshRate"]
-    ScreenSize = metadata["ScreenSize"]
-    InstitutionName = metadata["InstitutionName"]
-    InstitutionAddress = metadata["InstitutionAddress"]
-    SoftwareVersion = metadata["SoftwareVersion"]
-    ScreenAOIDefinition = metadata["ScreenAOIDefinition"]
-    EyeCameraSettings = metadata["EyeCameraSettings"]
-    EyeTrackerDistance = metadata["EyeTrackerDistance"]
-    FeatureDetectionSettings = metadata["FeatureDetectionSettings"]
-    GazeMappingSettings = metadata["GazeMappingSettings"]
-    RawDataFilters = metadata["RawDataFilters"]
-
-    # Prepare asc file
     # dataframe for events, all
     df_ms = pd.DataFrame([ms.split() for ms in events if ms.startswith("MSG")])
 
     # reduced dataframe without MSG and sample columns
     df_ms_reduced = pd.DataFrame(df_ms.iloc[0:, 2:])
 
-    # Events.json Metadata
-
-    ScreenResolution = list(
-        map(
-            int,
-            (
-                df_ms_reduced[df_ms_reduced[2] == "DISPLAY_COORDS"]
-                .iloc[0:1, 3:5]
-                .to_string(header=False, index=False)
-            ).split(" "),
-        )
-    )
-
-    TaskName = (
-        " ".join([ts for ts in events if ts.startswith("** RECORDED BY")])
-        .replace("** RECORDED BY ", "")
-        .replace("\n", "")
-    )
-
     # Eyetrack.json Metadata
-
     ManufacturersModelName = (
         " ".join([ml for ml in events if ml.startswith("** EYELINK")])
         .replace("** ", "")
@@ -133,24 +105,6 @@ before loading the file in a next step."""
         .replace("** SERIAL NUMBER: ", "")
         .replace("\n", "")
     )
-
-    SamplingFrequency = int(
-        df_ms_reduced[df_ms_reduced[2] == "RECCFG"]
-        .iloc[0:1, 2:3]
-        .to_string(header=False, index=False)
-    )
-
-    eye = (
-        df_ms_reduced[df_ms_reduced[2] == "RECCFG"]
-        .iloc[0:1, 5:6]
-        .to_string(header=False, index=False)
-    )
-    if eye == "L":
-        RecordedEye = eye.replace("L", "Left")
-    elif eye == "R":
-        RecordedEye = eye.replace("R", "Right")
-    elif eye == "LR":
-        RecordedEye = eye.replace("LR", "Both")
 
     if df_ms[df_ms[3] == "VALIDATION"].empty is False:
         AverageCalibrationError = (
@@ -168,12 +122,12 @@ before loading the file in a next step."""
         .astype(int)
         .tolist()
     )
-    cal_num = int(len(cal_pos) / CalibrationCount)
-    CalibrationPosition = list()
+    cal_num = len(cal_pos) // CalibrationCount
+    CalibrationPosition = []
     if len(cal_pos) != 0:
-        for i in range(0, len(cal_pos), cal_num):
-            CalibrationPosition.append(cal_pos[i : i + cal_num])
-
+        CalibrationPosition.extend(
+            cal_pos[i : i + cal_num] for i in range(0, len(cal_pos), cal_num)
+        )
     CalibrationType = (
         df_ms_reduced[df_ms_reduced[3] == "CALIBRATION"]
         .iloc[0:1, 2:3]
@@ -186,12 +140,12 @@ before loading the file in a next step."""
             .iloc[0:1, 0:1]
             .to_string(header=False, index=False)
         )
-        if cal_unit == "pix.":
-            CalibrationUnit = "pixel"
+        if cal_unit == "cm":
+            CalibrationUnit = "cm"
         elif cal_unit == "mm":
             CalibrationUnit = "mm"
-        elif cal_unit == "cm":
-            CalibrationUnit = "cm"
+        elif cal_unit == "pix.":
+            CalibrationUnit = "pixel"
     else:
         CalibrationUnit = ""
 
@@ -218,65 +172,105 @@ before loading the file in a next step."""
         .to_string(header=False, index=False)
     )
 
+    # TODO:figure out if this is actually the StartTime meant by the specification
     StartTime = (
         np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
         .astype(int)
         .tolist()
-    )  # TODO:figure out if this is actually the StartTime meant by the specification
+    )
 
+    # TODO:figure out if this is actually the StopTime meant by the specification
     StopTime = (
         np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
         .astype(int)
         .tolist()
-    )  # TODO:figure out if this is actually the StopTime meant by the specification
+    )
+
+    with open(metadata_file) as f:
+        metadata = yaml.load(f, Loader=SafeLoader)
 
     # to json
-
     eyetrack_json = {
-        "Manufacturer": "SR-Research",
-        "ManufacturersModelName": ManufacturersModelName,
-        "DeviceSerialNumber": DeviceSerialNumber,
-        "SoftwareVersion": SoftwareVersion,
-        "SamplingFrequency": SamplingFrequency,
-        "SampleCoordinateUnits": SampleCoordinateUnits,
-        "SampleCoordinateSystem": SampleCoordinateSystem,
-        "EnvironmentCoordinates": EnvironmentCoordinates,
-        "RecordedEye": RecordedEye,
-        "ScreenAOIDefinition": ScreenAOIDefinition,
+        "EnvironmentCoordinates": metadata["EnvironmentCoordinates"],
+        "EyeCameraSettings": metadata["EyeCameraSettings"],
+        "EyeTrackerDistance": metadata["EyeTrackerDistance"],
+        "FeatureDetectionSettings": metadata["FeatureDetectionSettings"],
+        "GazeMappingSettings": metadata["GazeMappingSettings"],
+        "RawDataFilters": metadata["RawDataFilters"],
+        "SampleCoordinateSystem": metadata["SampleCoordinateSystem"],
+        "SampleCoordinateUnits": metadata["SampleCoordinateUnits"],
+        "ScreenAOIDefinition": metadata["ScreenAOIDefinition"],
+        "SoftwareVersion": metadata["SoftwareVersion"],
         "AverageCalibrationError": AverageCalibrationError,
         "CalibrationCount": CalibrationCount,
-        "CalibrationType": CalibrationType,
-        "CalibrationUnit": CalibrationUnit,
-        "EyeCameraSettings": EyeCameraSettings,
-        "EyeTrackerDistance": EyeTrackerDistance,
         "CalibrationPosition": CalibrationPosition,
+        "CalibrationUnit": CalibrationUnit,
+        "CalibrationType": CalibrationType,
+        "DeviceSerialNumber": DeviceSerialNumber,
         "EyeTrackingMethod": EyeTrackingMethod,
-        "FeatureDetectionSettings": FeatureDetectionSettings,
-        "GazeMappingSettings": GazeMappingSettings,
+        "Manufacturer": "SR-Research",
+        "ManufacturersModelName": ManufacturersModelName,
         "MaximalCalibrationError": MaximalCalibrationError,
         "PupilFitMethod": PupilFitMethod,
-        "RawDataFilters": RawDataFilters,
+        "RecordedEye": _extract_RecordedEye(df_ms_reduced),
+        "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
         "StartTime": StartTime,
         "StopTime": StopTime,
     }
 
     with open(output_dir / "eyetrack.json", "w") as outfile:
-        json.dump(eyetrack_json, outfile, indent=15)
+        json.dump(eyetrack_json, outfile, indent=4)
 
+    # Events.json Metadata
     events_json = {
-        "TaskName": TaskName,
-        "InstitutionName": InstitutionName,
-        "InstitutionAddress": InstitutionAddress,
+        "InstitutionAddress": metadata["InstitutionAddress"],
+        "InstitutionName": metadata["InstitutionName"],
         "StimulusPresentation": {
-            "ScreenDistance": ScreenDistance,
-            "ScreenRefreshRate": ScreenRefreshRate,
-            "ScreenResolution": ScreenResolution,
-            "ScreenSize": ScreenSize,
+            "ScreenDistance": metadata["ScreenDistance"],
+            "ScreenRefreshRate": metadata["ScreenRefreshRate"],
+            "ScreenSize": metadata["ScreenSize"],
+            "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
         },
+        "TaskName": _extract_TaskName(events),
     }
 
     with open(output_dir / "events.json", "w") as outfile:
-        json.dump(events_json, outfile, indent=9)
+        json.dump(events_json, outfile, indent=4)
+
+
+def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
+    return int(df[df[2] == "RECCFG"].iloc[0:1, 2:3].to_string(header=False, index=False))
+
+
+def _extract_RecordedEye(df: pd.DataFrame) -> str:
+    eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
+    if eye == "L":
+        return "Left"
+    elif eye == "R":
+        return "Right"
+    elif eye == "LR":
+        return "Both"
+
+
+def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
+    return list(
+        map(
+            int,
+            (
+                df[df[2] == "DISPLAY_COORDS"]
+                .iloc[0:1, 3:5]
+                .to_string(header=False, index=False)
+            ).split(" "),
+        )
+    )
+
+
+def _extract_TaskName(events):
+    return (
+        " ".join([ts for ts in events if ts.startswith("** RECORDED BY")])
+        .replace("** RECORDED BY ", "")
+        .replace("\n", "")
+    )
 
 
 if __name__ == "__main__":

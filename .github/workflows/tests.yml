@@ -41,7 +41,10 @@ jobs:
                 sudo apt install eyelink-display-software
                 python -m pip install --upgrade pip
 
-        -   name: Install
+        -   name: Install data
+            run: make test_data
+
+        -   name: Install package
             run: pip install .[test]
 
         -   name: unit tests
