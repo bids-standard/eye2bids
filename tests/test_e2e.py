@@ -14,7 +14,7 @@ def test_edf_end_to_end():
     output_dir.mkdir(exist_ok=True)
 
     main(
-        input_file=str(input_file),
-        metadata_file=str(metadata_file),
-        output_dir=str(output_dir),
+        input_file=input_file,
+        metadata_file=metadata_file,
+        output_dir=output_dir,
     )

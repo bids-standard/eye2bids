@@ -1,7 +1,9 @@
 """Main module for conversion of edf to bids compliant files."""
+from __future__ import annotations
+
 import json
-import os
 import subprocess
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -11,19 +13,55 @@ from yaml.loader import SafeLoader
 from eye2bids._parser import global_parser
 
 
-def main(input_file=None, metadata_file=None, output_dir=None):
+def _check_inputs(
+    input_file: str | Path | None = None,
+    metadata_file: str | Path | None = None,
+    output_dir: str | Path | None = None,
+) -> tuple[Path, Path, Path]:
+    if input_file is None:
+        input_file = input("Enter the edf file path: ")
+    if isinstance(input_file, str):
+        input_file = Path(input_file)
+    if input_file.exists():
+        print("The file exists")
+    else:
+        raise FileNotFoundError(f"No such file: {input_file}")
+
+    if metadata_file is None:
+        metadata_file = input("Enter the file path to the metadata.yml file: ")
+    if isinstance(metadata_file, str):
+        metadata_file = Path(metadata_file)
+    if isinstance(metadata_file, str):
+        metadata_file = Path(metadata_file)
+    if metadata_file.exists():
+        print("The file exists")
+    else:
+        raise FileNotFoundError(f"No such file: {metadata_file}")
+
+    if output_dir is None:
+        output_dir = input("Enter the output directory: ")
+    if isinstance(output_dir, str):
+        output_dir = Path(output_dir)
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    return input_file, metadata_file, output_dir
+
+
+def main(
+    input_file: str | Path | None = None,
+    metadata_file: str | Path | None = None,
+    output_dir: str | Path | None = None,
+):
     """Convert edf to tsv + json."""
     # CONVERSION events
 
-    if input_file is None:
-        input_file = input("Enter the edf file path: ")
-    if os.path.exists(input_file):
-        print("The file exists")
-    else:
-        raise FileNotFoundError("No such file or directory")
+    input_file, metadata_file, output_dir = _check_inputs(
+        input_file, metadata_file, output_dir
+    )
 
-    subprocess.run(["edf2asc", "-y", "-e", input_file, input_file + "_events"])
-    asc_file = input_file + "_events.asc"
+    subprocess.run(["edf2asc", "-y", "-e", input_file, str(input_file) + "_events"])
+    asc_file = str(input_file) + "_events.asc"
 
     with open(asc_file) as f:
         events = f.readlines()
@@ -36,13 +74,6 @@ in the format specified in the BIDS specification.\n
 Please enter the required metadata manually
 before loading the file in a next step."""
     )
-
-    if metadata_file is None:
-        metadata_file = input("Enter the file path to the metadata.yml file: ")
-    if os.path.exists(metadata_file):
-        print("The file exists")
-    else:
-        raise FileNotFoundError("No such file or directory")
 
     with open(metadata_file) as f:
         metadata = yaml.load(f, Loader=SafeLoader)
@@ -200,8 +231,6 @@ before loading the file in a next step."""
     )  # TODO:figure out if this is actually the StopTime meant by the specification
 
     # to json
-    if output_dir is None:
-        output_dir = input("Enter the output directory: ")
 
     eyetrack_json = {
         "Manufacturer": "SR-Research",
@@ -231,7 +260,7 @@ before loading the file in a next step."""
         "StopTime": StopTime,
     }
 
-    with open(output_dir + "eyetrack.json", "w") as outfile:
+    with open(output_dir / "eyetrack.json", "w") as outfile:
         json.dump(eyetrack_json, outfile, indent=15)
 
     events_json = {
@@ -246,7 +275,7 @@ before loading the file in a next step."""
         },
     }
 
-    with open(output_dir + "events.json", "w") as outfile:
+    with open(output_dir / "events.json", "w") as outfile:
         json.dump(events_json, outfile, indent=9)
 
 
