@@ -41,11 +41,11 @@ jobs:
                 sudo apt install eyelink-display-software
                 python -m pip install --upgrade pip
 
-        -   name: Install data
-            run: make test_data
-
         -   name: Install package
             run: pip install .[test]
+
+        -   name: Install data
+            run: make test_data
 
         -   name: unit tests
             run: python -m pytest tests --cov-report=xml
