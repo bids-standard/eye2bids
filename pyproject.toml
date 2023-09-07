@@ -55,6 +55,7 @@ doc = [
 ]
 # For running unit and docstring tests
 test = [
+    "requests",
     "coverage",
     "pytest",
     "pytest-cov"

@@ -1,6 +1,5 @@
 """Download test data from OSF, unzip and install in the correct location."""
 
-import os
 import shutil
 import zipfile
 from pathlib import Path
@@ -11,7 +10,7 @@ download_url = "https://files.de-1.osf.io/v1/resources/jdv7n/providers/osfstorag
 
 root_dir = Path(__file__).parent.parent
 
-output_dir = root_dir / "tests" / "data"
+output_dir = root_dir / "tests" / "data" / "osf"
 
 if output_dir.exists():
     shutil.rmtree(output_dir)
@@ -29,4 +28,4 @@ with open(output_file, "wb") as f:
 # unzip the file
 with zipfile.ZipFile(output_file, "r") as zip_ref:
     zip_ref.extractall(output_dir / ".")
-    os.remove(output_file)
+    output_file.unlink()

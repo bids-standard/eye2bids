@@ -10,7 +10,13 @@ def test_edf_end_to_end():
     if not _check_edf2asc_present():
         pytest.skip("edf2asc missing")
     data_dir = Path(__file__).parent / "data"
-    input_file = data_dir / "decisions_modality_baptisteC2_7-5-2016_21-26-13.edf"
+    input_file = (
+        data_dir
+        / "osf"
+        / "eyelink"
+        / "decisions"
+        / "decisions_modality_baptisteC2_7-5-2016_21-26-13.edf"
+    )
     metadata_file = data_dir / "metadata.yml"
     output_dir = data_dir / "output"
     output_dir.mkdir(exist_ok=True)

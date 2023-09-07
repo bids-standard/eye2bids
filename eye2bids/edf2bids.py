@@ -75,11 +75,11 @@ def main(
     if not _check_edf2asc_present():
         return
 
-    # CONVERSION events
     input_file, metadata_file, output_dir = _check_inputs(
         input_file, metadata_file, output_dir
     )
 
+    # CONVERSION events
     subprocess.run(["edf2asc", "-y", "-e", input_file, f"{str(input_file)}_events"])
 
     # Prepare asc file
@@ -94,27 +94,6 @@ def main(
     df_ms_reduced = pd.DataFrame(df_ms.iloc[0:, 2:])
 
     # Eyetrack.json Metadata
-    ManufacturersModelName = (
-        " ".join([ml for ml in events if ml.startswith("** EYELINK")])
-        .replace("** ", "")
-        .replace("\n", "")
-    )
-
-    DeviceSerialNumber = (
-        " ".join([sl for sl in events if sl.startswith("** SERIAL NUMBER:")])
-        .replace("** SERIAL NUMBER: ", "")
-        .replace("\n", "")
-    )
-
-    if df_ms[df_ms[3] == "VALIDATION"].empty is False:
-        AverageCalibrationError = (
-            np.array(df_ms[df_ms[3] == "VALIDATION"][[9]]).astype(float).tolist()
-        )
-    else:
-        AverageCalibrationError = []
-
-    CalibrationCount = len(df_ms_reduced[df_ms_reduced[3] == "CALIBRATION"])
-
     cal_pos = (
         np.array(
             df_ms_reduced[df_ms_reduced[2] == "VALIDATE"][8].str.split(",", expand=True)
@@ -122,17 +101,12 @@ def main(
         .astype(int)
         .tolist()
     )
-    cal_num = len(cal_pos) // CalibrationCount
+    cal_num = len(cal_pos) // _extract_CalibrationCount(df_ms_reduced)
     CalibrationPosition = []
     if len(cal_pos) != 0:
         CalibrationPosition.extend(
             cal_pos[i : i + cal_num] for i in range(0, len(cal_pos), cal_num)
         )
-    CalibrationType = (
-        df_ms_reduced[df_ms_reduced[3] == "CALIBRATION"]
-        .iloc[0:1, 2:3]
-        .to_string(header=False, index=False)
-    )
 
     if len(cal_pos) != 0:
         cal_unit = (
@@ -148,29 +122,6 @@ def main(
             CalibrationUnit = "pixel"
     else:
         CalibrationUnit = ""
-
-    EyeTrackingMethod = (
-        pd.DataFrame(
-            " ".join([tm for tm in events if tm.startswith(">>>>>>>")])
-            .replace(")", ",")
-            .split(",")
-        )
-        .iloc[1:2]
-        .to_string(header=False, index=False)
-    )
-
-    if df_ms[df_ms[3] == "VALIDATION"].empty is False:
-        MaximalCalibrationError = (
-            np.array(df_ms[df_ms[3] == "VALIDATION"][[11]]).astype(float).tolist()
-        )
-    else:
-        MaximalCalibrationError = []
-
-    PupilFitMethod = (
-        (df_ms_reduced[df_ms_reduced[2] == "ELCL_PROC"])
-        .iloc[0:1, 1:2]
-        .to_string(header=False, index=False)
-    )
 
     # TODO:figure out if this is actually the StartTime meant by the specification
     StartTime = (
@@ -201,17 +152,17 @@ def main(
         "SampleCoordinateUnits": metadata["SampleCoordinateUnits"],
         "ScreenAOIDefinition": metadata["ScreenAOIDefinition"],
         "SoftwareVersion": metadata["SoftwareVersion"],
-        "AverageCalibrationError": AverageCalibrationError,
-        "CalibrationCount": CalibrationCount,
+        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
+        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
         "CalibrationPosition": CalibrationPosition,
         "CalibrationUnit": CalibrationUnit,
-        "CalibrationType": CalibrationType,
-        "DeviceSerialNumber": DeviceSerialNumber,
-        "EyeTrackingMethod": EyeTrackingMethod,
+        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
+        "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
+        "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
         "Manufacturer": "SR-Research",
-        "ManufacturersModelName": ManufacturersModelName,
-        "MaximalCalibrationError": MaximalCalibrationError,
-        "PupilFitMethod": PupilFitMethod,
+        "ManufacturersModelName": _extract_ManufacturersModelName(events),
+        "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms),
+        "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
         "RecordedEye": _extract_RecordedEye(df_ms_reduced),
         "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
         "StartTime": StartTime,
@@ -236,6 +187,70 @@ def main(
 
     with open(output_dir / "events.json", "w") as outfile:
         json.dump(events_json, outfile, indent=4)
+
+
+def _calibrations(df):
+    return df[df[3] == "CALIBRATION"]
+
+
+def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
+    return _calibrations(df).iloc[0:1, 2:3].to_string(header=False, index=False)
+
+
+def _extract_CalibrationCount(df: pd.DataFrame) -> int:
+    return len(_calibrations(df))
+
+
+def _extract_EyeTrackingMethod(events) -> str:
+    return (
+        pd.DataFrame(
+            " ".join([tm for tm in events if tm.startswith(">>>>>>>")])
+            .replace(")", ",")
+            .split(",")
+        )
+        .iloc[1:2]
+        .to_string(header=False, index=False)
+    )
+
+
+def _validations(df: pd.DataFrame):
+    return df[df[3] == "VALIDATION"]
+
+
+def _has_validation(df: pd.DataFrame) -> bool:
+    return not _validations(df).empty
+
+
+def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
+    if not _has_validation(df):
+        return []
+    return np.array(_validations(df)[[11]]).astype(float).tolist()
+
+
+def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
+    if _has_validation(df):
+        return []
+    return np.array(_validations(df)[[9]]).astype(float).tolist()
+
+
+def _extract_ManufacturersModelName(events) -> str:
+    return (
+        " ".join([ml for ml in events if ml.startswith("** EYELINK")])
+        .replace("** ", "")
+        .replace("\n", "")
+    )
+
+
+def _extract_DeviceSerialNumber(events) -> str:
+    return (
+        " ".join([sl for sl in events if sl.startswith("** SERIAL NUMBER:")])
+        .replace("** SERIAL NUMBER: ", "")
+        .replace("\n", "")
+    )
+
+
+def _extract_PupilFitMethod(df: pd.DataFrame) -> str:
+    return (df[df[2] == "ELCL_PROC"]).iloc[0:1, 1:2].to_string(header=False, index=False)
 
 
 def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
