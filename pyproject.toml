@@ -103,7 +103,8 @@ module = [
     "rich.*",
     "pandas",
     "pytest",
-    "rich_argparse"
+    "rich_argparse",
+    "eye2bids._version"
 ]
 
 [[tool.mypy.overrides]]
