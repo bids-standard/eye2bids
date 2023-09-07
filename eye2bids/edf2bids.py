@@ -66,98 +66,10 @@ def _check_edf2asc_present() -> bool:
         return False
 
 
-def main(
-    input_file: str | Path | None = None,
-    metadata_file: str | Path | None = None,
-    output_dir: str | Path | None = None,
-):
-    """Convert edf to tsv + json."""
-    if not _check_edf2asc_present():
-        return
-
-    input_file, metadata_file, output_dir = _check_inputs(
-        input_file, metadata_file, output_dir
-    )
-
-    # CONVERSION events
-    subprocess.run(["edf2asc", "-y", "-e", input_file, f"{str(input_file)}_events"])
-
-    # Prepare asc file
-    asc_file = f"{str(input_file)}_events.asc"
-    with open(asc_file) as f:
-        events = f.readlines()
-
-    # dataframe for events, all
-    df_ms = pd.DataFrame([ms.split() for ms in events if ms.startswith("MSG")])
-
-    # reduced dataframe without MSG and sample columns
-    df_ms_reduced = pd.DataFrame(df_ms.iloc[0:, 2:])
-
-    # Eyetrack.json Metadata
-    # TODO:figure out if this is actually the StartTime meant by the specification
-    StartTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
-
-    # TODO:figure out if this is actually the StopTime meant by the specification
-    StopTime = (
-        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
-        .astype(int)
-        .tolist()
-    )
-
-    with open(metadata_file) as f:
-        metadata = yaml.load(f, Loader=SafeLoader)
-
-    # to json
-    eyetrack_json = {
-        "Manufacturer": "SR-Research",
-        "EnvironmentCoordinates": metadata["EnvironmentCoordinates"],
-        "EyeCameraSettings": metadata["EyeCameraSettings"],
-        "EyeTrackerDistance": metadata["EyeTrackerDistance"],
-        "FeatureDetectionSettings": metadata["FeatureDetectionSettings"],
-        "GazeMappingSettings": metadata["GazeMappingSettings"],
-        "RawDataFilters": metadata["RawDataFilters"],
-        "SampleCoordinateSystem": metadata["SampleCoordinateSystem"],
-        "SampleCoordinateUnits": metadata["SampleCoordinateUnits"],
-        "ScreenAOIDefinition": metadata["ScreenAOIDefinition"],
-        "SoftwareVersion": metadata["SoftwareVersion"],
-        "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
-        "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
-        "ManufacturersModelName": _extract_ManufacturersModelName(events),
-        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
-        "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms),
-        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
-        "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
-        "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
-        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
-        "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
-        "RecordedEye": _extract_RecordedEye(df_ms_reduced),
-        "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
-        "StartTime": StartTime,
-        "StopTime": StopTime,
-    }
-
-    with open(output_dir / "eyetrack.json", "w") as outfile:
-        json.dump(eyetrack_json, outfile, indent=4)
-
-    # Events.json Metadata
-    events_json = {
-        "InstitutionAddress": metadata["InstitutionAddress"],
-        "InstitutionName": metadata["InstitutionName"],
-        "StimulusPresentation": {
-            "ScreenDistance": metadata["ScreenDistance"],
-            "ScreenRefreshRate": metadata["ScreenRefreshRate"],
-            "ScreenSize": metadata["ScreenSize"],
-            "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
-        },
-        "TaskName": _extract_TaskName(events),
-    }
-
-    with open(output_dir / "events.json", "w") as outfile:
-        json.dump(events_json, outfile, indent=4)
+def _convert_edf_to_asc(input_file: str | Path) -> Path:
+    """Convert edf to asc."""
+    subprocess.run(["edf2asc", "-y", "-e", input_file])
+    return Path(input_file).with_suffix(".asc")
 
 
 def _calibrations(df):
@@ -297,10 +209,103 @@ def _extract_TaskName(events: list[str]):
     )
 
 
+def edf2bids(
+    input_file: str | Path | None = None,
+    metadata_file: str | Path | None = None,
+    output_dir: str | Path | None = None,
+):
+    """Convert edf to tsv + json."""
+    if not _check_edf2asc_present():
+        return
+
+    input_file, metadata_file, output_dir = _check_inputs(
+        input_file, metadata_file, output_dir
+    )
+
+    # CONVERSION events
+    asc_file = _convert_edf_to_asc(input_file)
+
+    # Prepare asc file
+    with open(asc_file) as f:
+        events = f.readlines()
+
+    # dataframe for events, all
+    df_ms = pd.DataFrame([ms.split() for ms in events if ms.startswith("MSG")])
+
+    # reduced dataframe without MSG and sample columns
+    df_ms_reduced = pd.DataFrame(df_ms.iloc[0:, 2:])
+
+    # Eyetrack.json Metadata
+    # TODO:figure out if this is actually the StartTime meant by the specification
+    StartTime = (
+        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
+        .astype(int)
+        .tolist()
+    )
+
+    # TODO:figure out if this is actually the StopTime meant by the specification
+    StopTime = (
+        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
+        .astype(int)
+        .tolist()
+    )
+
+    with open(metadata_file) as f:
+        metadata = yaml.load(f, Loader=SafeLoader)
+
+    # to json
+    eyetrack_json = {
+        "Manufacturer": "SR-Research",
+        "EnvironmentCoordinates": metadata["EnvironmentCoordinates"],
+        "EyeCameraSettings": metadata["EyeCameraSettings"],
+        "EyeTrackerDistance": metadata["EyeTrackerDistance"],
+        "FeatureDetectionSettings": metadata["FeatureDetectionSettings"],
+        "GazeMappingSettings": metadata["GazeMappingSettings"],
+        "RawDataFilters": metadata["RawDataFilters"],
+        "SampleCoordinateSystem": metadata["SampleCoordinateSystem"],
+        "SampleCoordinateUnits": metadata["SampleCoordinateUnits"],
+        "ScreenAOIDefinition": metadata["ScreenAOIDefinition"],
+        "SoftwareVersion": metadata["SoftwareVersion"],
+        "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
+        "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
+        "ManufacturersModelName": _extract_ManufacturersModelName(events),
+        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
+        "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms),
+        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
+        "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
+        "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
+        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
+        "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
+        "RecordedEye": _extract_RecordedEye(df_ms_reduced),
+        "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
+        "StartTime": StartTime,
+        "StopTime": StopTime,
+    }
+
+    with open(output_dir / "eyetrack.json", "w") as outfile:
+        json.dump(eyetrack_json, outfile, indent=4)
+
+    # Events.json Metadata
+    events_json = {
+        "InstitutionAddress": metadata["InstitutionAddress"],
+        "InstitutionName": metadata["InstitutionName"],
+        "StimulusPresentation": {
+            "ScreenDistance": metadata["ScreenDistance"],
+            "ScreenRefreshRate": metadata["ScreenRefreshRate"],
+            "ScreenSize": metadata["ScreenSize"],
+            "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
+        },
+        "TaskName": _extract_TaskName(events),
+    }
+
+    with open(output_dir / "events.json", "w") as outfile:
+        json.dump(events_json, outfile, indent=4)
+
+
 if __name__ == "__main__":
     parser = global_parser()
     args = parser.parse_args()
-    main(
+    edf2bids(
         input_file=args.input_file,
         metadata_file=args.metadata_file,
         output_dir=args.output_dir,
