@@ -79,8 +79,3 @@ python tools/download_test_data.py
 ```
 
 ## Related projects
-
-
-f
-
-ff

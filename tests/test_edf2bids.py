@@ -6,10 +6,13 @@ import pytest
 from eye2bids.edf2bids import _check_edf2asc_present, _convert_edf_to_asc, edf2bids
 
 
-def edf_test_files():
-    data_dir = Path(__file__).parent / "data"
-    files = list(data_dir.glob("**/*.edf"))
-    EDF_files = list(data_dir.glob("**/*.EDF"))
+def data_dir():
+    return Path(__file__).parent / "data"
+
+
+def edf_test_files(input_dir=data_dir()):
+    files = list(input_dir.glob("**/*.edf"))
+    EDF_files = list(input_dir.glob("**/*.EDF"))
     files.extend(EDF_files)
     return files
 
@@ -22,19 +25,14 @@ def test_convert_edf_to_asc(input_file):
     assert Path(asc_file).exists()
 
 
-def test_edf_end_to_end():
+@pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
+def test_edf_end_to_end(metadata_file):
     if not _check_edf2asc_present():
         pytest.skip("edf2asc missing")
-    data_dir = Path(__file__).parent / "data"
-    input_file = (
-        data_dir
-        / "osf"
-        / "eyelink"
-        / "decisions"
-        / "decisions_modality_baptisteC2_7-5-2016_21-26-13.edf"
-    )
-    metadata_file = data_dir / "metadata.yml"
-    output_dir = data_dir / "output"
+
+    input_file = edf_test_files(input_dir=data_dir() / "osf" / "eyelink" / "decisions")[0]
+
+    output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
 
     edf2bids(

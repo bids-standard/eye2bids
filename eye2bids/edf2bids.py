@@ -17,9 +17,13 @@ def _check_inputs(
     input_file: str | Path | None = None,
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
-) -> tuple[Path, Path, Path]:
+    interactive: bool = False,
+) -> tuple[Path, Path | None, Path]:
     if input_file is None:
-        input_file = input("Enter the edf file path: ")
+        if interactive:
+            input_file = input("Enter the edf file path: ")
+        else:
+            raise FileNotFoundError("No input file specified")
     if isinstance(input_file, str):
         input_file = Path(input_file)
     if input_file.exists():
@@ -27,24 +31,24 @@ def _check_inputs(
     else:
         raise FileNotFoundError(f"No such file: {input_file}")
 
-    if metadata_file is None:
-        # Read variables from the additional metadata txt file
+    if metadata_file is None and interactive:
         print(
             """Load the metadata.yml file with the additional metadata.\n
-    This file must contain at least the additional REQUIRED metadata
-    in the format specified in the BIDS specification.\n
-    Please enter the required metadata manually
-    before loading the file in a next step."""
+            This file must contain at least the additional REQUIRED metadata
+            in the format specified in the BIDS specification.\n
+            Please enter the required metadata manually
+            before loading the file in a next step."""
         )
         metadata_file = input("Enter the file path to the metadata.yml file: ")
     if isinstance(metadata_file, str):
         metadata_file = Path(metadata_file)
     if isinstance(metadata_file, str):
         metadata_file = Path(metadata_file)
-    if metadata_file.exists():
-        print("The file exists")
-    else:
-        raise FileNotFoundError(f"No such file: {metadata_file}")
+    if isinstance(metadata_file, Path):
+        if metadata_file.exists():
+            print("The file exists")
+        else:
+            raise FileNotFoundError(f"No such file: {metadata_file}")
 
     if output_dir is None:
         output_dir = input("Enter the output directory: ")
@@ -213,13 +217,14 @@ def edf2bids(
     input_file: str | Path | None = None,
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
+    interactive: bool = False,
 ):
     """Convert edf to tsv + json."""
     if not _check_edf2asc_present():
         return
 
     input_file, metadata_file, output_dir = _check_inputs(
-        input_file, metadata_file, output_dir
+        input_file, metadata_file, output_dir, interactive
     )
 
     # CONVERSION events
@@ -250,22 +255,25 @@ def edf2bids(
         .tolist()
     )
 
-    with open(metadata_file) as f:
-        metadata = yaml.load(f, Loader=SafeLoader)
+    if metadata_file is None:
+        metadata = {}
+    else:
+        with open(metadata_file) as f:
+            metadata = yaml.load(f, Loader=SafeLoader)
 
     # to json
     eyetrack_json = {
         "Manufacturer": "SR-Research",
-        "EnvironmentCoordinates": metadata["EnvironmentCoordinates"],
-        "EyeCameraSettings": metadata["EyeCameraSettings"],
-        "EyeTrackerDistance": metadata["EyeTrackerDistance"],
-        "FeatureDetectionSettings": metadata["FeatureDetectionSettings"],
-        "GazeMappingSettings": metadata["GazeMappingSettings"],
-        "RawDataFilters": metadata["RawDataFilters"],
-        "SampleCoordinateSystem": metadata["SampleCoordinateSystem"],
-        "SampleCoordinateUnits": metadata["SampleCoordinateUnits"],
-        "ScreenAOIDefinition": metadata["ScreenAOIDefinition"],
-        "SoftwareVersion": metadata["SoftwareVersion"],
+        "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
+        "EyeCameraSettings": metadata.get("EyeCameraSettings"),
+        "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
+        "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
+        "GazeMappingSettings": metadata.get("GazeMappingSettings"),
+        "RawDataFilters": metadata.get("RawDataFilters"),
+        "SampleCoordinateSystem": metadata.get("SampleCoordinateSystem"),
+        "SampleCoordinateUnits": metadata.get("SampleCoordinateUnits"),
+        "ScreenAOIDefinition": metadata.get("ScreenAOIDefinition"),
+        "SoftwareVersion": metadata.get("SoftwareVersion"),
         "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
         "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
         "ManufacturersModelName": _extract_ManufacturersModelName(events),
@@ -287,12 +295,12 @@ def edf2bids(
 
     # Events.json Metadata
     events_json = {
-        "InstitutionAddress": metadata["InstitutionAddress"],
-        "InstitutionName": metadata["InstitutionName"],
+        "InstitutionAddress": metadata.get("InstitutionAddress"),
+        "InstitutionName": metadata.get("InstitutionName"),
         "StimulusPresentation": {
-            "ScreenDistance": metadata["ScreenDistance"],
-            "ScreenRefreshRate": metadata["ScreenRefreshRate"],
-            "ScreenSize": metadata["ScreenSize"],
+            "ScreenDistance": metadata.get("ScreenDistance"),
+            "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
+            "ScreenSize": metadata.get("ScreenSize"),
             "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
         },
         "TaskName": _extract_TaskName(events),
