@@ -6,7 +6,10 @@ import pytest
 from eye2bids.edf2bids import (
     _check_edf2asc_present,
     _convert_edf_to_asc,
+    _extract_CalibrationPosition,
     _extract_CalibrationType,
+    _extract_CalibrationUnit,
+    _extract_ScreenResolution,
     _load_asc_file_as_reduced_df,
     edf2bids,
 )
@@ -69,7 +72,7 @@ def test_edf_end_to_end(metadata_file):
     [
         ("decisions", "HV9"),
         ("emg", "HV9"),
-        ("lt", "HV9"),
+        ("lt", "FIXME"),
         ("pitracker", "HV9"),
         ("rest", "HV13"),
         ("satf", "HV9"),
@@ -81,3 +84,79 @@ def test_extract_CalibrationType(folder, expected):
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationType(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", [1919, 1079]),
+        ("emg", [1919, 1079]),
+        ("lt", "FIXME"),
+        ("pitracker", [1919, 1079]),
+        ("rest", "FIXME"),
+        ("satf", [1919, 1079]),
+        ("vergence", [1919, 1079]),
+    ],
+)
+def test_extract_ScreenResolution(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
+    assert _extract_ScreenResolution(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", ""),
+        ("emg", ""),
+        ("lt", "FIXME"),
+        ("pitracker", ""),
+        ("rest", "pixel"),
+        ("satf", ""),
+        ("vergence", ""),
+    ],
+)
+def test_extract_CalibrationUnit(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
+    assert _extract_CalibrationUnit(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", []),
+        ("emg", []),
+        ("lt", "FIXME"),
+        ("pitracker", []),
+        (
+            "rest",
+            [
+                [
+                    [960, 540],
+                    [960, 732],
+                    [1126, 444],
+                    [1344, 540],
+                    [576, 540],
+                    [768, 873],
+                    [1152, 873],
+                    [768, 207],
+                    [1152, 207],
+                    [794, 636],
+                    [1126, 636],
+                    [794, 444],
+                    [960, 348],
+                ]
+            ],
+        ),
+        ("satf", []),
+        ("vergence", []),
+    ],
+)
+def test_extract_CalibrationPosition(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
+    assert _extract_CalibrationPosition(df_ms_reduced) == expected
