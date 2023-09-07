@@ -22,7 +22,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "pandas"
+    "pandas",
+    "pyaml"
 ]
 description = "eyetracking data bids converter in Python"
 dynamic = ["version"]
