@@ -11,11 +11,14 @@ from eye2bids.edf2bids import (
     _extract_CalibrationUnit,
     _extract_DeviceSerialNumber,
     _extract_EyeTrackingMethod,
+    _extract_ManufacturersModelName,
+    _extract_MaximalCalibrationError,
     _extract_PupilFitMethod,
     _extract_RecordedEye,
     _extract_SamplingFrequency,
     _extract_ScreenResolution,
     _load_asc_file,
+    _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
     edf2bids,
 )
@@ -287,3 +290,41 @@ def test_extract_RecordedEye(folder, expected):
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_RecordedEye(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", "EYELINK II CL v5.04 Sep 25 2014"),
+        ("emg", "EYELINK II CL v5.04 Sep 25 2014"),
+        ("lt", "EYELINK II CL v5.15 Jan 24 2018"),
+        ("pitracker", "EYELINK II CL v5.01 Jan 16 2014"),
+        ("rest", "EYELINK II CL v5.09 Nov 17 2015"),
+        ("satf", "EYELINK II CL v4.594 Jul  6 2012"),
+        ("vergence", "EYELINK II CL v4.56 Aug 18 2010"),
+    ],
+)
+def test_extract_ManufacturersModelName(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    events = _load_asc_file(asc_file)
+    assert _extract_ManufacturersModelName(events) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", []),
+        ("emg", []),
+        ("lt", [[0.32], [0.37]]),
+        ("pitracker", []),
+        ("rest", [[0.9]]),
+        ("satf", []),
+        ("vergence", []),
+    ],
+)
+def test_extract_MaximalCalibrationError(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms = _load_asc_file_as_df(asc_file)
+    assert _extract_MaximalCalibrationError(df_ms) == expected
