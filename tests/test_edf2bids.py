@@ -6,6 +6,7 @@ import pytest
 from eye2bids.edf2bids import (
     _check_edf2asc_present,
     _convert_edf_to_asc,
+    _extract_AverageCalibrationError,
     _extract_CalibrationPosition,
     _extract_CalibrationType,
     _extract_CalibrationUnit,
@@ -328,3 +329,22 @@ def test_extract_MaximalCalibrationError(folder, expected):
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms = _load_asc_file_as_df(asc_file)
     assert _extract_MaximalCalibrationError(df_ms) == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", []),
+        ("emg", []),
+        ("lt", []),
+        ("pitracker", []),
+        ("rest", []),
+        ("satf", []),
+        ("vergence", []),
+    ],
+)
+def test_extract_AverageCalibrationError(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms = _load_asc_file_as_df(asc_file)
+    assert _extract_AverageCalibrationError(df_ms) == expected
