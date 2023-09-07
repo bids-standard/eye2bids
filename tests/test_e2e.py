@@ -8,7 +8,10 @@ from eye2bids.edf2bids import _check_edf2asc_present, _convert_edf_to_asc, edf2b
 
 def edf_test_files():
     data_dir = Path(__file__).parent / "data"
-    return list(data_dir.glob("**/*.edf"))
+    files = list(data_dir.glob("**/*.edf"))
+    EDF_files = list(data_dir.glob("**/*.EDF"))
+    files.extend(EDF_files)
+    return files
 
 
 @pytest.mark.parametrize("input_file", edf_test_files())
