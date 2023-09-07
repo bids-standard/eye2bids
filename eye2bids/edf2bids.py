@@ -94,35 +94,6 @@ def main(
     df_ms_reduced = pd.DataFrame(df_ms.iloc[0:, 2:])
 
     # Eyetrack.json Metadata
-    cal_pos = (
-        np.array(
-            df_ms_reduced[df_ms_reduced[2] == "VALIDATE"][8].str.split(",", expand=True)
-        )
-        .astype(int)
-        .tolist()
-    )
-    cal_num = len(cal_pos) // _extract_CalibrationCount(df_ms_reduced)
-    CalibrationPosition = []
-    if len(cal_pos) != 0:
-        CalibrationPosition.extend(
-            cal_pos[i : i + cal_num] for i in range(0, len(cal_pos), cal_num)
-        )
-
-    if len(cal_pos) != 0:
-        cal_unit = (
-            (df_ms_reduced[df_ms_reduced[2] == "VALIDATE"][[13]])
-            .iloc[0:1, 0:1]
-            .to_string(header=False, index=False)
-        )
-        if cal_unit == "cm":
-            CalibrationUnit = "cm"
-        elif cal_unit == "mm":
-            CalibrationUnit = "mm"
-        elif cal_unit == "pix.":
-            CalibrationUnit = "pixel"
-    else:
-        CalibrationUnit = ""
-
     # TODO:figure out if this is actually the StartTime meant by the specification
     StartTime = (
         np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
@@ -142,6 +113,7 @@ def main(
 
     # to json
     eyetrack_json = {
+        "Manufacturer": "SR-Research",
         "EnvironmentCoordinates": metadata["EnvironmentCoordinates"],
         "EyeCameraSettings": metadata["EyeCameraSettings"],
         "EyeTrackerDistance": metadata["EyeTrackerDistance"],
@@ -152,16 +124,15 @@ def main(
         "SampleCoordinateUnits": metadata["SampleCoordinateUnits"],
         "ScreenAOIDefinition": metadata["ScreenAOIDefinition"],
         "SoftwareVersion": metadata["SoftwareVersion"],
-        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
-        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
-        "CalibrationPosition": CalibrationPosition,
-        "CalibrationUnit": CalibrationUnit,
-        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
         "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
         "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
-        "Manufacturer": "SR-Research",
         "ManufacturersModelName": _extract_ManufacturersModelName(events),
+        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
         "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms),
+        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
+        "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
+        "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
+        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
         "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
         "RecordedEye": _extract_RecordedEye(df_ms_reduced),
         "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
@@ -201,7 +172,45 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
     return len(_calibrations(df))
 
 
-def _extract_EyeTrackingMethod(events) -> str:
+def _get_calibration_positions(df: pd.DataFrame) -> np.array:
+    return (
+        np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
+        .astype(int)
+        .tolist()
+    )
+
+
+def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int]]:
+    cal_pos = _get_calibration_positions(df)
+    cal_num = len(cal_pos) // _extract_CalibrationCount(df)
+
+    CalibrationPosition = []
+
+    if len(cal_pos) == 0:
+        return CalibrationPosition
+
+    CalibrationPosition.extend(
+        cal_pos[i : i + cal_num] for i in range(0, len(cal_pos), cal_num)
+    )
+    return CalibrationPosition
+
+
+def _extract_CalibrationUnit(df: pd.DataFrame) -> str:
+    if len(_get_calibration_positions(df)) == 0:
+        return ""
+
+    cal_unit = (
+        (df[df[2] == "VALIDATE"][[13]])
+        .iloc[0:1, 0:1]
+        .to_string(header=False, index=False)
+    )
+    if cal_unit in ["cm", "mm"]:
+        return "cm"
+    elif cal_unit == "pix.":
+        return "pixel"
+
+
+def _extract_EyeTrackingMethod(events: list[str]) -> str:
     return (
         pd.DataFrame(
             " ".join([tm for tm in events if tm.startswith(">>>>>>>")])
@@ -233,7 +242,7 @@ def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
     return np.array(_validations(df)[[9]]).astype(float).tolist()
 
 
-def _extract_ManufacturersModelName(events) -> str:
+def _extract_ManufacturersModelName(events: list[str]) -> str:
     return (
         " ".join([ml for ml in events if ml.startswith("** EYELINK")])
         .replace("** ", "")
@@ -241,7 +250,7 @@ def _extract_ManufacturersModelName(events) -> str:
     )
 
 
-def _extract_DeviceSerialNumber(events) -> str:
+def _extract_DeviceSerialNumber(events: list[str]) -> str:
     return (
         " ".join([sl for sl in events if sl.startswith("** SERIAL NUMBER:")])
         .replace("** SERIAL NUMBER: ", "")
@@ -280,7 +289,7 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
     )
 
 
-def _extract_TaskName(events):
+def _extract_TaskName(events: list[str]):
     return (
         " ".join([ts for ts in events if ts.startswith("** RECORDED BY")])
         .replace("** RECORDED BY ", "")
