@@ -1,4 +1,5 @@
 tests/data/test_data.zip
+tests/data/**/*.json
 **/*.asc
 **/*.edf
 **/*.EDF

@@ -6,6 +6,7 @@ RUN apt-get update -qq \
                   ca-certificates \
                   curl \
                   gcc \
+                  git \
                   gnupg2 \
                   pip \
                   python3 \
@@ -45,7 +46,8 @@ RUN printf '{ \
           "ca-certificates", \
           "software-properties-common", \
           "python3", \
-          "pip" \
+          "pip", \
+          "git" \
         ], \
         "opts": null \
       } \
@@ -53,7 +55,7 @@ RUN printf '{ \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "apt-get update -qq \\\\\\n    && apt-get install -y -q --no-install-recommends \\\\\\n           ca-certificates \\\\\\n           curl \\\\\\n           gcc \\\\\\n           gnupg2 \\\\\\n           pip \\\\\\n           python3 \\\\\\n           software-properties-common \\\\\\n    && rm -rf /var/lib/apt/lists/*" \
+        "command": "apt-get update -qq \\\\\\n    && apt-get install -y -q --no-install-recommends \\\\\\n           ca-certificates \\\\\\n           curl \\\\\\n           gcc \\\\\\n           git \\\\\\n           gnupg2 \\\\\\n           pip \\\\\\n           python3 \\\\\\n           software-properties-common \\\\\\n    && rm -rf /var/lib/apt/lists/*" \
       } \
     }, \
     { \

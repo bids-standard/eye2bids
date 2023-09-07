@@ -17,7 +17,5 @@ jobs:
         steps:
         -   name: Clone
             uses: actions/checkout@v3
-            with:
-                fetch-depth: 0
         -   name: Build docker image
             run: docker build -t eye2bids:latest .

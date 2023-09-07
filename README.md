@@ -45,12 +45,6 @@ pip install .
 
     - edf file by EyeLink Eye Tracker
 
-To try it, you can install our test data from OSF by running the following command:
-
-```bash
-python tools/download_test_data.py
-```
-
 - manual_metadata.yml file (find template and an example in conversion_json folder)
 
 ### Run code
@@ -75,6 +69,13 @@ Make sure you install eye2bids in editable mode (see above) and install the deve
 
 ```bash
 pip install --editable .[dev]
+```
+
+To run the tests, you need to install the [test data from OSF](https://osf.io/jdv7n/)
+by running the following command:
+
+```bash
+python tools/download_test_data.py
 ```
 
 ## Related projects

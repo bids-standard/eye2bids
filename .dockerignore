@@ -1,7 +1,6 @@
 # ignoring this might speed up build
 # by preventing passing extra content to the docker daemon
 
-
 # General
 .DS_Store
 

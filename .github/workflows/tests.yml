@@ -1,0 +1,51 @@
+---
+name: test
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: ['*']
+
+jobs:
+    test:
+
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ['3.8', '3.9', '3.10', '3.11']
+
+        runs-on: ubuntu-latest
+
+        steps:
+
+        -   name: Clone
+            uses: actions/checkout@v3
+
+        -   uses: actions/setup-python@v4
+            with:
+                python-version: ${{ matrix.python-version }}
+
+        -   name: Install dependencies
+            run: |
+                sudo add-apt-repository universe
+                sudo apt-get update
+                sudo apt-get install ca-certificates
+                sudo apt-key adv --fetch-keys https://apt.sr-research.com/SRResearch_key
+                sudo add-apt-repository 'deb [arch=amd64] https://apt.sr-research.com SRResearch main'
+                sudo apt update
+                sudo apt install eyelink-display-software
+                python -m pip install --upgrade pip
+
+        -   name: Install package
+            run: pip install .[test]
+
+        -   name: Install data
+            run: make test_data
+
+        -   name: unit tests
+            run: python -m pytest tests --cov-report=xml
