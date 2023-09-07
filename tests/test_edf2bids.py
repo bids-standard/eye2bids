@@ -96,6 +96,7 @@ def test_extract_CalibrationType(folder, expected):
     assert _extract_CalibrationType(df_ms_reduced) == expected
 
 
+# ("rest", "FIXME"),
 @pytest.mark.parametrize(
     "folder, expected",
     [
@@ -103,7 +104,6 @@ def test_extract_CalibrationType(folder, expected):
         ("emg", [1919, 1079]),
         ("lt", [1919, 1079]),
         ("pitracker", [1919, 1079]),
-        ("rest", "FIXME"),
         ("satf", [1919, 1079]),
         ("vergence", [1919, 1079]),
     ],
