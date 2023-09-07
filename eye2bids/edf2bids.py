@@ -213,6 +213,23 @@ def _extract_TaskName(events: list[str]):
     )
 
 
+def _load_asc_file(asc_file: str | Path) -> list[str]:
+    with open(asc_file) as f:
+        return f.readlines()
+
+
+def _load_asc_file_as_df(asc_file: str | Path) -> pd.DataFrame:
+    # dataframe for events, all
+    events = _load_asc_file(asc_file)
+    return pd.DataFrame([ms.split() for ms in events if ms.startswith("MSG")])
+
+
+def _load_asc_file_as_reduced_df(asc_file: str | Path) -> pd.DataFrame:
+    # reduced dataframe without MSG and sample columns
+    df_ms = _load_asc_file_as_df(asc_file)
+    return pd.DataFrame(df_ms.iloc[0:, 2:])
+
+
 def edf2bids(
     input_file: str | Path | None = None,
     metadata_file: str | Path | None = None,
@@ -230,15 +247,9 @@ def edf2bids(
     # CONVERSION events
     asc_file = _convert_edf_to_asc(input_file)
 
-    # Prepare asc file
-    with open(asc_file) as f:
-        events = f.readlines()
-
-    # dataframe for events, all
-    df_ms = pd.DataFrame([ms.split() for ms in events if ms.startswith("MSG")])
-
-    # reduced dataframe without MSG and sample columns
-    df_ms_reduced = pd.DataFrame(df_ms.iloc[0:, 2:])
+    events = _load_asc_file(asc_file)
+    df_ms = _load_asc_file_as_df(asc_file)
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
 
     # Eyetrack.json Metadata
     # TODO:figure out if this is actually the StartTime meant by the specification

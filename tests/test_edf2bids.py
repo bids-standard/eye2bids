@@ -3,14 +3,24 @@ from pathlib import Path
 
 import pytest
 
-from eye2bids.edf2bids import _check_edf2asc_present, _convert_edf_to_asc, edf2bids
+from eye2bids.edf2bids import (
+    _check_edf2asc_present,
+    _convert_edf_to_asc,
+    _extract_CalibrationType,
+    _load_asc_file_as_reduced_df,
+    edf2bids,
+)
 
 
-def data_dir():
+def data_dir() -> Path:
     return Path(__file__).parent / "data"
 
 
-def edf_test_files(input_dir=data_dir()):
+def asc_test_files(input_dir: Path = data_dir()) -> list[Path]:
+    return list(input_dir.glob("**/*.asc"))
+
+
+def edf_test_files(input_dir: Path = data_dir()) -> list[Path]:
     files = list(input_dir.glob("**/*.edf"))
     EDF_files = list(input_dir.glob("**/*.EDF"))
     files.extend(EDF_files)
@@ -30,7 +40,8 @@ def test_edf_end_to_end(metadata_file):
     if not _check_edf2asc_present():
         pytest.skip("edf2asc missing")
 
-    input_file = edf_test_files(input_dir=data_dir() / "osf" / "eyelink" / "decisions")[0]
+    input_dir = data_dir() / "osf" / "eyelink" / "decisions"
+    input_file = edf_test_files(input_dir=input_dir)[0]
 
     output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
@@ -51,3 +62,22 @@ def test_edf_end_to_end(metadata_file):
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 1000
     assert eyetrack["RecordedEye"] == "Right"
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("decisions", "HV9"),
+        ("emg", "HV9"),
+        ("lt", "HV9"),
+        ("pitracker", "HV9"),
+        ("rest", "HV13"),
+        ("satf", "HV9"),
+        ("vergence", "HV9"),
+    ],
+)
+def test_extract_CalibrationType(folder, expected):
+    input_dir = data_dir() / "osf" / "eyelink" / folder
+    asc_file = asc_test_files(input_dir=input_dir)[0]
+    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
+    assert _extract_CalibrationType(df_ms_reduced) == expected
