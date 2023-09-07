@@ -38,7 +38,7 @@ git clone https://github.com/bids-standard/eye2bids.git
 cd eye2bids
 pip install .
 ```
-foo
+
 ## Using eye2bids
 
 - Supporeted Input data:
@@ -50,10 +50,28 @@ foo
 ### Run code
 
 ```bash
-python edf2bids_json.py
+eye2bids --input_file INPUT_FILE
 ```
 
-[SR-Research support forum]: https://www.sr-research.com/support/forum-9.html
+    Usage: eye2bids [-h] [-v] --input_file INPUT_FILE [--metadata_file METADATA_FILE] [--output_dir OUTPUT_DIR] [-i] [--verbosity {0,1,2,3}]
+                    [--input_type INPUT_TYPE]
+
+    Converts eyetracking data to a BIDS compatible format.
+
+    Options:
+    -h, --help            show this help message and exit
+    -v, --version         show program's version number and exit
+    --input_file INPUT_FILE
+                            Path to the input file to convert.
+    --metadata_file METADATA_FILE
+                            Path to the a yaml file containing extra metadata.
+    --output_dir OUTPUT_DIR
+                            Path to output directory.
+    -i, --interactive     To run in interactive mode.
+    --verbosity {0,1,2,3}
+                            Verbosity level.
+    --input_type INPUT_TYPE
+                            Input type if it cannot be determined from input_file.
 
 ## Docker
 
@@ -79,8 +97,3 @@ python tools/download_test_data.py
 ```
 
 ## Related projects
-
-
-f
-
-ff

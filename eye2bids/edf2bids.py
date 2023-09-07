@@ -8,9 +8,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
+from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
 from eye2bids._parser import global_parser
+from eye2bids.logger import eye2bids_logger
+
+e2b_log = eye2bids_logger()
 
 
 def _check_inputs(
@@ -21,32 +25,30 @@ def _check_inputs(
 ) -> tuple[Path, Path | None, Path]:
     if input_file is None:
         if interactive:
-            input_file = input("Enter the edf file path: ")
+            input_file = Prompt.ask("Enter the edf file path")
         else:
             raise FileNotFoundError("No input file specified")
     if isinstance(input_file, str):
         input_file = Path(input_file)
     if input_file.exists():
-        print("The file exists")
+        e2b_log.info(f"file found: {input_file}")
     else:
         raise FileNotFoundError(f"No such file: {input_file}")
 
     if metadata_file is None and interactive:
-        print(
+        e2b_log.info(
             """Load the metadata.yml file with the additional metadata.\n
             This file must contain at least the additional REQUIRED metadata
-            in the format specified in the BIDS specification.\n
-            Please enter the required metadata manually
-            before loading the file in a next step."""
+            in the format specified in the BIDS specification.\n"""
         )
-        metadata_file = input("Enter the file path to the metadata.yml file: ")
+        metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
     if isinstance(metadata_file, str):
         metadata_file = Path(metadata_file)
     if isinstance(metadata_file, str):
         metadata_file = Path(metadata_file)
     if isinstance(metadata_file, Path):
         if metadata_file.exists():
-            print("The file exists")
+            e2b_log.info(f"file found: {metadata_file}")
         else:
             raise FileNotFoundError(f"No such file: {metadata_file}")
 
@@ -66,7 +68,10 @@ def _check_edf2asc_present() -> bool:
         subprocess.run(["edf2asc"])
         return True
     except FileNotFoundError:
-        print("edf2asc not found in path")
+        e2b_log.error(
+            """edf2asc not found in path.
+Make sure to install it from https://www.sr-research.com/."""
+        )
         return False
 
 
@@ -303,6 +308,7 @@ def edf2bids(
 
     with open(output_dir / "eyetrack.json", "w") as outfile:
         json.dump(eyetrack_json, outfile, indent=4)
+    e2b_log.info(f"file generated: {output_dir / 'eyetrack.json'}")
 
     # Events.json Metadata
     events_json = {
@@ -319,6 +325,7 @@ def edf2bids(
 
     with open(output_dir / "events.json", "w") as outfile:
         json.dump(events_json, outfile, indent=4)
+    e2b_log.info(f"file generated: {output_dir / 'events.json'}")
 
 
 if __name__ == "__main__":

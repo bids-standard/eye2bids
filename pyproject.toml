@@ -23,7 +23,9 @@ classifiers = [
 dependencies = [
     "numpy",
     "pandas",
-    "pyaml"
+    "pyaml",
+    "rich_argparse",
+    "rich"
 ]
 description = "eyetracking data bids converter in Python"
 dynamic = ["version"]
@@ -61,6 +63,9 @@ test = [
     "pytest-cov"
 ]
 
+[project.scripts]
+eye2bids = "eye2bids._cli:cli"
+
 [tool.black]
 line-length = 90
 
@@ -82,6 +87,31 @@ combine_as_imports = true
 line_length = 90
 profile = "black"
 skip_gitignore = true
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = [
+    "rich",
+    "rich.logging",
+    "pandas",
+    "pytest",
+    "rich_argparse"
+]
+
+[[tool.mypy.overrides]]
+ignore_errors = true
+module = [
+    'tests.*'
+]
 
 [tool.pytest.ini_options]
 addopts = "-ra -q -vv --cov eye2bids"
