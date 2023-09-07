@@ -1,13 +1,14 @@
 import json
 from pathlib import Path
 
-from eye2bids.edf2bids import main
+import pytest
 
-# import pytest
+from eye2bids.edf2bids import _check_edf2asc_present, main
 
 
-# @pytest.mark.skip(reason="Not implemented yet")
 def test_edf_end_to_end():
+    if not _check_edf2asc_present():
+        pytest.skip("edf2asc missing")
     data_dir = Path(__file__).parent / "data"
     input_file = data_dir / "decisions_modality_baptisteC2_7-5-2016_21-26-13.edf"
     metadata_file = data_dir / "metadata.yml"
