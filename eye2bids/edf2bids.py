@@ -81,7 +81,7 @@ def _convert_edf_to_asc(input_file: str | Path) -> Path:
     return Path(input_file).with_suffix(".asc")
 
 
-def _calibrations(df):
+def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "CALIBRATION"]
 
 
@@ -93,7 +93,7 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
     return len(_calibrations(df))
 
 
-def _get_calibration_positions(df: pd.DataFrame) -> np.array:
+def _get_calibration_positions(df: pd.DataFrame) -> list[int]:
     return (
         np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
         .astype(int)
@@ -105,7 +105,7 @@ def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int]]:
     cal_pos = _get_calibration_positions(df)
     cal_num = len(cal_pos) // _extract_CalibrationCount(df)
 
-    CalibrationPosition = []
+    CalibrationPosition: list[list[int]] = []
 
     if len(cal_pos) == 0:
         return CalibrationPosition
@@ -125,10 +125,11 @@ def _extract_CalibrationUnit(df: pd.DataFrame) -> str:
         .iloc[0:1, 0:1]
         .to_string(header=False, index=False)
     )
-    if cal_unit in ["cm", "mm"]:
-        return "cm"
-    elif cal_unit == "pix.":
+    if cal_unit == "pix.":
         return "pixel"
+    elif cal_unit in ["cm", "mm"]:
+        return cal_unit
+    return ""
 
 
 def _extract_EyeTrackingMethod(events: list[str]) -> str:
@@ -143,7 +144,7 @@ def _extract_EyeTrackingMethod(events: list[str]) -> str:
     )
 
 
-def _validations(df: pd.DataFrame):
+def _validations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "VALIDATION"]
 
 
@@ -195,6 +196,7 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
         return "Right"
     elif eye == "LR":
         return "Both"
+    return ""
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
@@ -210,7 +212,7 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
     )
 
 
-def _extract_TaskName(events: list[str]):
+def _extract_TaskName(events: list[str]) -> str:
     return (
         " ".join([ts for ts in events if ts.startswith("** RECORDED BY")])
         .replace("** RECORDED BY ", "")
@@ -240,7 +242,7 @@ def edf2bids(
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
     interactive: bool = False,
-):
+) -> None:
     """Convert edf to tsv + json."""
     if not _check_edf2asc_present():
         return

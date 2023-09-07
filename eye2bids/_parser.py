@@ -6,7 +6,7 @@ from rich_argparse import RichHelpFormatter
 from eye2bids._version import __version__
 
 
-def global_parser():
+def global_parser() -> ArgumentParser:
     """Parse command line arguments.
 
     Returns
