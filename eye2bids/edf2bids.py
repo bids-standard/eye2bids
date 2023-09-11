@@ -23,43 +23,47 @@ def _check_inputs(
     output_dir: str | Path | None = None,
     interactive: bool = False,
 ) -> tuple[Path, Path | None, Path]:
+    """Check if inputs are valid."""
     if input_file is None:
         if interactive:
             input_file = Prompt.ask("Enter the edf file path")
         else:
             raise FileNotFoundError("No input file specified")
     if isinstance(input_file, str):
-        input_file = Path(input_file)
-    if input_file.exists():
-        e2b_log.info(f"file found: {input_file}")
+        cheked_input_file = Path(input_file)
+    if cheked_input_file.exists():
+        e2b_log.info(f"input file found: {cheked_input_file}")
     else:
-        raise FileNotFoundError(f"No such file: {input_file}")
+        raise FileNotFoundError(f"No such input file: {cheked_input_file}")
 
-    if metadata_file is None and interactive:
+    if metadata_file in [None, ""] and interactive:
         e2b_log.info(
             """Load the metadata.yml file with the additional metadata.\n
             This file must contain at least the additional REQUIRED metadata
             in the format specified in the BIDS specification.\n"""
         )
         metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
-    if isinstance(metadata_file, str):
-        metadata_file = Path(metadata_file)
-    if isinstance(metadata_file, str):
-        metadata_file = Path(metadata_file)
-    if isinstance(metadata_file, Path):
-        if metadata_file.exists():
-            e2b_log.info(f"file found: {metadata_file}")
-        else:
-            raise FileNotFoundError(f"No such file: {metadata_file}")
+    if isinstance(metadata_file, str) and metadata_file != "":
+        checked_metadata_file = Path(metadata_file)
+    if isinstance(checked_metadata_file, Path):
+        if not checked_metadata_file.exists():
+            raise FileNotFoundError(f"No such metadata file: {checked_metadata_file}")
+        if checked_metadata_file.is_file():
+            e2b_log.info(f"metadata file found: {checked_metadata_file}")
+        elif checked_metadata_file.is_dir():
+            raise IsADirectoryError(
+                f"metadata file is a directory: {checked_metadata_file}"
+            )
 
     if output_dir is None:
         output_dir = input("Enter the output directory: ")
     if isinstance(output_dir, str):
-        output_dir = Path(output_dir)
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True, exist_ok=True)
+        checked_output_dir = Path(output_dir)
 
-    return input_file, metadata_file, output_dir
+    if not checked_output_dir.exists():
+        checked_output_dir.mkdir(parents=True, exist_ok=True)
+
+    return cheked_input_file, checked_metadata_file, checked_output_dir
 
 
 def _check_edf2asc_present() -> bool:

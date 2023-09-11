@@ -68,6 +68,6 @@ def global_parser() -> ArgumentParser:
         choices=[0, 1, 2, 3],
         default=2,
         type=int,
-        nargs=1,
+        nargs=2,
     )
     return parser
