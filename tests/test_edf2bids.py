@@ -338,9 +338,9 @@ def test_extract_MaximalCalibrationError(folder, expected):
     [
         ("decisions", []),
         ("emg", []),
-        ("lt", []),
+        ("lt", [[0.16], [0.18]]),
         ("pitracker", []),
-        ("rest", []),
+        ("rest", [[0.65]]),
         ("satf", []),
         ("vergence", []),
     ],

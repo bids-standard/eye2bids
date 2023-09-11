@@ -159,7 +159,7 @@ def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
 
 
 def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
-    if _has_validation(df):
+    if not _has_validation(df):
         return []
     return np.array(_validations(df)[[9]]).astype(float).tolist()
 
