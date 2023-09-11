@@ -4,6 +4,8 @@ tests/data/**/*.json
 **/*.edf
 **/*.EDF
 eye2bids/_version.py
+events.json
+eyetrack.json
 
 # General
 .DS_Store

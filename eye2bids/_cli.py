@@ -40,14 +40,13 @@ def cli(argv: Sequence[str] = sys.argv) -> None:
 
     args, _ = parser.parse_known_args(argv[1:])
 
-    input_file = args.input_file
-    input_file = Path(input_file).resolve()
+    input_file = Path(args.input_file).resolve()
 
     metadata_file = args.metadata_file
-    if metadata_file is not None:
-        metadata_file = metadata_file[0]
+    if metadata_file not in [None, ""]:
+        metadata_file = Path(metadata_file).resolve()
 
-    output_dir = args.output_dir
+    output_dir = Path(args.output_dir).resolve()
 
     set_verbosity(args.verbosity)
 

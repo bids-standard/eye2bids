@@ -26,20 +26,7 @@ from eye2bids.edf2bids import (
     edf2bids,
 )
 
-
-def data_dir() -> Path:
-    return Path(__file__).parent / "data"
-
-
-def asc_test_files(input_dir: Path = data_dir()) -> list[Path]:
-    return list(input_dir.glob("**/*.asc"))
-
-
-def edf_test_files(input_dir: Path = data_dir()) -> list[Path]:
-    files = list(input_dir.glob("**/*.edf"))
-    EDF_files = list(input_dir.glob("**/*.EDF"))
-    files.extend(EDF_files)
-    return files
+from .conftest import asc_test_files, data_dir, edf_test_files
 
 
 @pytest.mark.parametrize("input_file", edf_test_files())
@@ -51,11 +38,11 @@ def test_convert_edf_to_asc(input_file):
 
 
 @pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
-def test_edf_end_to_end(metadata_file):
+def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
     if not _check_edf2asc_present():
         pytest.skip("edf2asc missing")
 
-    input_dir = data_dir() / "osf" / "eyelink" / "decisions"
+    input_dir = eyelink_test_data_dir / "decisions"
     input_file = edf_test_files(input_dir=input_dir)[0]
 
     output_dir = data_dir() / "output"
@@ -91,8 +78,8 @@ def test_edf_end_to_end(metadata_file):
         ("vergence", "HV9"),
     ],
 )
-def test_extract_CalibrationType(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationType(df_ms_reduced) == expected
@@ -110,8 +97,8 @@ def test_extract_CalibrationType(folder, expected):
         ("vergence", [1919, 1079]),
     ],
 )
-def test_extract_ScreenResolution(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_ScreenResolution(df_ms_reduced) == expected
@@ -129,8 +116,8 @@ def test_extract_ScreenResolution(folder, expected):
         ("vergence", ""),
     ],
 )
-def test_extract_CalibrationUnit(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationUnit(df_ms_reduced) == expected
@@ -193,8 +180,8 @@ def test_extract_CalibrationUnit(folder, expected):
         ("vergence", []),
     ],
 )
-def test_extract_CalibrationPosition(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationPosition(df_ms_reduced) == expected
@@ -212,8 +199,8 @@ def test_extract_CalibrationPosition(folder, expected):
         ("vergence", "P-CR"),
     ],
 )
-def test_extract_EyeTrackingMethod(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_EyeTrackingMethod(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     events = _load_asc_file(asc_file)
     assert _extract_EyeTrackingMethod(events) == expected
@@ -231,8 +218,8 @@ def test_extract_EyeTrackingMethod(folder, expected):
         ("vergence", 1000),
     ],
 )
-def test_extract_SamplingFrequency(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_SamplingFrequency(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_SamplingFrequency(df_ms_reduced) == expected
@@ -250,8 +237,8 @@ def test_extract_SamplingFrequency(folder, expected):
         ("vergence", "CENTROID"),
     ],
 )
-def test_extract_PupilFitMethod(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_PupilFitMethod(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_PupilFitMethod(df_ms_reduced) == expected
@@ -269,8 +256,8 @@ def test_extract_PupilFitMethod(folder, expected):
         ("vergence", "CL1-72N02"),
     ],
 )
-def test_extract_DeviceSerialNumber(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     events = _load_asc_file(asc_file)
     assert _extract_DeviceSerialNumber(events) == expected
@@ -288,8 +275,8 @@ def test_extract_DeviceSerialNumber(folder, expected):
         ("vergence", "Both"),
     ],
 )
-def test_extract_RecordedEye(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_RecordedEye(df_ms_reduced) == expected
@@ -307,8 +294,8 @@ def test_extract_RecordedEye(folder, expected):
         ("vergence", "EYELINK II CL v4.56 Aug 18 2010"),
     ],
 )
-def test_extract_ManufacturersModelName(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     events = _load_asc_file(asc_file)
     assert _extract_ManufacturersModelName(events) == expected
@@ -326,8 +313,8 @@ def test_extract_ManufacturersModelName(folder, expected):
         ("vergence", []),
     ],
 )
-def test_extract_MaximalCalibrationError(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_MaximalCalibrationError(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms = _load_asc_file_as_df(asc_file)
     assert _extract_MaximalCalibrationError(df_ms) == expected
@@ -338,15 +325,15 @@ def test_extract_MaximalCalibrationError(folder, expected):
     [
         ("decisions", []),
         ("emg", []),
-        ("lt", []),
+        ("lt", [[0.16], [0.18]]),
         ("pitracker", []),
-        ("rest", []),
+        ("rest", [[0.65]]),
         ("satf", []),
         ("vergence", []),
     ],
 )
-def test_extract_AverageCalibrationError(folder, expected):
-    input_dir = data_dir() / "osf" / "eyelink" / folder
+def test_extract_AverageCalibrationError(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
     df_ms = _load_asc_file_as_df(asc_file)
     assert _extract_AverageCalibrationError(df_ms) == expected
