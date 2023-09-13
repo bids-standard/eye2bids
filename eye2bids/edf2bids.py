@@ -221,16 +221,7 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
-    return list(
-        map(
-            int,
-            (
-                df[df[2] == "DISPLAY_COORDS"]
-                .iloc[0:1, 3:5]
-                .to_string(header=False, index=False)
-            ).split(" "),
-        )
-    )
+    return (df[df[2] == "GAZE_COORDS"]).iloc[0:1, 3:5].to_string(header=False, index=False).replace(".00", "").split(" ")
 
 
 def _extract_TaskName(events: list[str]) -> str:
@@ -329,9 +320,9 @@ def edf2bids(
         "StopTime": StopTime,
     }
 
-    with open(output_dir / "eyetrack.json", "w") as outfile:
+    with open(output_dir / "_eyetrack.json", "w") as outfile:
         json.dump(eyetrack_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_dir / 'eyetrack.json'}")
+    e2b_log.info(f"file generated: {output_dir / '_eyetrack.json'}")
 
     # Events.json Metadata
     events_json = {
@@ -346,9 +337,9 @@ def edf2bids(
         "TaskName": _extract_TaskName(events),
     }
 
-    with open(output_dir / "events.json", "w") as outfile:
+    with open(output_dir / "_events.json", "w") as outfile:
         json.dump(events_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_dir / 'events.json'}")
+    e2b_log.info(f"file generated: {output_dir / '_events.json'}")
 
 
 if __name__ == "__main__":
