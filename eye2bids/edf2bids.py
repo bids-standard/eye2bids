@@ -231,23 +231,30 @@ def _extract_TaskName(events: list[str]) -> str:
         .replace("\n", "")
     )
 
-    # Eyetrack.json Metadata
 
 def _extract_StartTime(events: list[str]) -> int:
-    return (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
-
+    StartTime = np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1]).astype(int).tolist()
+    if len(StartTime) > 1:
+        e2b_log.info(
+             """Your input file contains multiple start times.\n
+             As this is not seen as good practice in eyetracking experiments, only the first start time will be kept for the metadata file.\n
+             Please consider changing your code accordingly for future eyetracking experiments.\n"""
+             )
+        return StartTime[0]
+    return StartTime
+  
   
 def _extract_StopTime(events: list[str]) -> int: 
-    return (
-        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
-        .astype(int)
-        .tolist()
-    )
-
+    StopTime = np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1]).astype(int).tolist()
+    if len(StopTime) > 1:
+        e2b_log.info(
+             """Your input file contains multiple stop times.\n
+             As this is not seen as good practice in eyetracking experiments, only the last stop time will be kept for the metadata file.\n
+             Please consider changing your code accordingly for future eyetracking experiments.\n"""
+             )
+        return StopTime[-1]
+    return StopTime
+    
 def _load_asc_file(asc_file: str | Path) -> list[str]:
     with open(asc_file) as f:
         return f.readlines()
