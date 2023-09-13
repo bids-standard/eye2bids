@@ -231,6 +231,22 @@ def _extract_TaskName(events: list[str]) -> str:
         .replace("\n", "")
     )
 
+    # Eyetrack.json Metadata
+
+def _extract_StartTime(events: list[str]) -> int:
+    return (
+        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
+        .astype(int)
+        .tolist()
+    )
+
+  
+def _extract_StopTime(events: list[str]) -> int: 
+    return (
+        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
+        .astype(int)
+        .tolist()
+    )
 
 def _load_asc_file(asc_file: str | Path) -> list[str]:
     with open(asc_file) as f:
@@ -270,20 +286,6 @@ def edf2bids(
     df_ms = _load_asc_file_as_df(asc_file)
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
 
-    # Eyetrack.json Metadata
-    # TODO:figure out if this is actually the StartTime meant by the specification
-    StartTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
-
-    # TODO:figure out if this is actually the StopTime meant by the specification
-    StopTime = (
-        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
-        .astype(int)
-        .tolist()
-    )
 
     if metadata_file is None:
         metadata = {}
@@ -316,8 +318,8 @@ def edf2bids(
         "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
         "RecordedEye": _extract_RecordedEye(df_ms_reduced),
         "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
-        "StartTime": StartTime,
-        "StopTime": StopTime,
+        "StartTime": _extract_StartTime(events),
+        "StopTime": _extract_StopTime(events),
     }
 
     with open(output_dir / "_eyetrack.json", "w") as outfile:
