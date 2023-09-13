@@ -221,7 +221,13 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
-    return (df[df[2] == "GAZE_COORDS"]).iloc[0:1, 3:5].to_string(header=False, index=False).replace(".00", "").split(" ")
+    return (
+        (df[df[2] == "GAZE_COORDS"])
+        .iloc[0:1, 3:5]
+        .to_string(header=False, index=False)
+        .replace(".00", "")
+        .split(" ")
+    )
 
 
 def _extract_TaskName(events: list[str]) -> str:
