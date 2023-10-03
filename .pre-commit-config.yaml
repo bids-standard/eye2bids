@@ -22,7 +22,7 @@ repos:
         args: [--profile, black]
 
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.13.0
+    rev: v3.14.0
     hooks:
     -   id: pyupgrade
         args: [--py38-plus]
@@ -34,7 +34,7 @@ repos:
         args: [--config, pyproject.toml]
 
 -   repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
     -   id: codespell
         args: [--toml, pyproject.toml]
