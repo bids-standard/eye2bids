@@ -3,7 +3,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     -   id: check-ast
     -   id: check-case-conflict
@@ -22,7 +22,7 @@ repos:
         args: [--profile, black]
 
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+    rev: v3.15.0
     hooks:
     -   id: pyupgrade
         args: [--py38-plus]
@@ -34,7 +34,7 @@ repos:
         args: [--config, pyproject.toml]
 
 -   repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
     -   id: codespell
         args: [--toml, pyproject.toml]
@@ -47,13 +47,13 @@ repos:
         args: [--mapping, '4', --sequence, '4', --offset, '0']
 
 -   repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.10.0
+    rev: v2.11.0
     hooks:
     -   id: pretty-format-toml
         args: [--autofix, --indent, '4']
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
+    rev: v1.6.0
     hooks:
     -   id: mypy
         additional_dependencies: [types-all]
