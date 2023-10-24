@@ -221,15 +221,12 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
-    return list(
-        map(
-            int,
-            (
-                df[df[2] == "DISPLAY_COORDS"]
-                .iloc[0:1, 3:5]
-                .to_string(header=False, index=False)
-            ).split(" "),
-        )
+    return (
+        (df[df[2] == "GAZE_COORDS"])
+        .iloc[0:1, 3:5]
+        .to_string(header=False, index=False)
+        .replace(".00", "")
+        .split(" ")
     )
 
 
@@ -239,6 +236,38 @@ def _extract_TaskName(events: list[str]) -> str:
         .replace("** RECORDED BY ", "")
         .replace("\n", "")
     )
+
+
+def _extract_StartTime(events: list[str]) -> int:
+    StartTime = (
+        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
+        .astype(int)
+        .tolist()
+    )
+    if len(StartTime) > 1:
+        e2b_log.info(
+            """Your input file contains multiple start times.\n
+             As this is not seen as good practice in eyetracking experiments, only the first start time will be kept for the metadata file.\n
+             Please consider changing your code accordingly for future eyetracking experiments.\n"""
+        )
+        return StartTime[0]
+    return StartTime
+
+
+def _extract_StopTime(events: list[str]) -> int:
+    StopTime = (
+        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
+        .astype(int)
+        .tolist()
+    )
+    if len(StopTime) > 1:
+        e2b_log.info(
+            """Your input file contains multiple stop times.\n
+             As this is not seen as good practice in eyetracking experiments, only the last stop time will be kept for the metadata file.\n
+             Please consider changing your code accordingly for future eyetracking experiments.\n"""
+        )
+        return StopTime[-1]
+    return StopTime
 
 
 def _load_asc_file(asc_file: str | Path) -> list[str]:
@@ -279,21 +308,6 @@ def edf2bids(
     df_ms = _load_asc_file_as_df(asc_file)
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
 
-    # Eyetrack.json Metadata
-    # TODO:figure out if this is actually the StartTime meant by the specification
-    StartTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
-
-    # TODO:figure out if this is actually the StopTime meant by the specification
-    StopTime = (
-        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
-        .astype(int)
-        .tolist()
-    )
-
     if metadata_file is None:
         metadata = {}
     else:
@@ -325,13 +339,13 @@ def edf2bids(
         "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
         "RecordedEye": _extract_RecordedEye(df_ms_reduced),
         "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
-        "StartTime": StartTime,
-        "StopTime": StopTime,
+        "StartTime": _extract_StartTime(events),
+        "StopTime": _extract_StopTime(events),
     }
 
-    with open(output_dir / "eyetrack.json", "w") as outfile:
+    with open(output_dir / "_eyetrack.json", "w") as outfile:
         json.dump(eyetrack_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_dir / 'eyetrack.json'}")
+    e2b_log.info(f"file generated: {output_dir / '_eyetrack.json'}")
 
     # Events.json Metadata
     events_json = {
@@ -346,9 +360,9 @@ def edf2bids(
         "TaskName": _extract_TaskName(events),
     }
 
-    with open(output_dir / "events.json", "w") as outfile:
+    with open(output_dir / "_events.json", "w") as outfile:
         json.dump(events_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_dir / 'events.json'}")
+    e2b_log.info(f"file generated: {output_dir / '_events.json'}")
 
 
 if __name__ == "__main__":
