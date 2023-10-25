@@ -4,20 +4,22 @@
 # Please go through the specification and fille the fields below according to the data types given in the specification.
 
 # REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
-SampleCoordinateUnits: ''
-SampleCoordinateSystem: ''
-EnvironmentCoordinates: ''
-ScreenDistance:
-ScreenRefreshRate:
-ScreenSize:
+SampleCoordinateUnits: !!str
+SampleCoordinateSystem: !!str
+EnvironmentCoordinates: !!str
+ScreenDistance: !!int
+ScreenRefreshRate: !!int
+ScreenSize: [!!float]
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
-SoftwareVersion: ''
-ScreenAOIDefinition:
+SoftwareVersion: !!str
+ScreenAOIDefinition: [!!str [!!int]]
 EyeCameraSettings:
-EyeTrackerDistance:
-FeatureDetectionSettings:
+EyeTrackerDistance: !!float
+FeatureDetectionSettings: 
 GazeMappingSettings:
 RawDataFilters:
-InstitutionName: ''
-InstitutionAddress: ''
+InstitutionName: !!str
+InstitutionAddress: !!str
+
+...

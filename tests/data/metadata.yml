@@ -4,20 +4,22 @@
 # Please go through the specification and fille the fields below according to the data types given in the specification.
 
 # REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
-SampleCoordinateUnits: pixel
-SampleCoordinateSystem: gaze-on-screen
-EnvironmentCoordinates: top-left
-ScreenDistance: 60
-ScreenRefreshRate: 60
-ScreenSize: [38.6, 29]
+SampleCoordinateUnits: !!str pixel
+SampleCoordinateSystem: !!str gaze-on-screen
+EnvironmentCoordinates: !!str top-left
+ScreenDistance: !!int 60
+ScreenRefreshRate: !!int 60
+ScreenSize: [!!float 38.6, 29]
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
-SoftwareVersion: SREB1.10.1630 WIN32 LID:F2AE011 Mod:2017.04.21 15:19 CEST
-ScreenAOIDefinition: [square, [00, 150, 300, 350]]
+SoftwareVersion: !!str SREB1.10.1630 WIN32 LID:F2AE011 Mod:2017.04.21 15:19 CEST
+ScreenAOIDefinition: [!!str square, [!!int 00, 150, 300, 350]]
 EyeCameraSettings:
 EyeTrackerDistance:
 FeatureDetectionSettings:
 GazeMappingSettings:
 RawDataFilters:
-InstitutionName: Philipps-University Marburg
-InstitutionAddress: Gutenbergstr. 18
+InstitutionName: !!str Philipps-University Marburg
+InstitutionAddress: !!str Gutenbergstr. 18
+
+... 
