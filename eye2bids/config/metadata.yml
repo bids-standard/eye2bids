@@ -16,7 +16,7 @@ SoftwareVersion: !!str
 ScreenAOIDefinition: [!!str [!!int]]
 EyeCameraSettings:
 EyeTrackerDistance: !!float
-FeatureDetectionSettings: 
+FeatureDetectionSettings:
 GazeMappingSettings:
 RawDataFilters:
 InstitutionName: !!str
