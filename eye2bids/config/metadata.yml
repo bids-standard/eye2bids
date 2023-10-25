@@ -10,7 +10,7 @@ SampleCoordinateSystem: !!str
 EnvironmentCoordinates: !!str
 ScreenDistance: !!int
 ScreenRefreshRate: !!int
-ScreenSize: [!!float] 
+ScreenSize: [!!float]
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
 SoftwareVersion: !!str
