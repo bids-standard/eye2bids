@@ -9,7 +9,7 @@ SampleCoordinateSystem: gaze-on-screen
 EnvironmentCoordinates: top-left
 ScreenDistance: 60
 ScreenRefreshRate: 60
-ScreenSize: [38.6, 29]
+ScreenSize: [0.386, 0.29]
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
 SoftwareVersion: SREB1.10.1630 WIN32 LID:F2AE011 Mod:2017.04.21 15:19 CEST

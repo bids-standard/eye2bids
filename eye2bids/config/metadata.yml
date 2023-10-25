@@ -2,6 +2,7 @@
 # manual_metadata
 # Please find the BIDS specification here: https://bids-specification--1128.org.readthedocs.build/en/1128/modality-specific-files/eye-tracking.html
 # Please go through the specification and fille the fields below according to the data types given in the specification.
+# !Note that ScreenSize and EyeTrackerDistance units are in meter, not centimeter!
 
 # REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
 SampleCoordinateUnits: !!str
@@ -9,7 +10,7 @@ SampleCoordinateSystem: !!str
 EnvironmentCoordinates: !!str
 ScreenDistance: !!int
 ScreenRefreshRate: !!int
-ScreenSize: [!!float]
+ScreenSize: [!!float] 
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
 SoftwareVersion: !!str
