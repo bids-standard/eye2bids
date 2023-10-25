@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import os
 from pathlib import Path
 
 import numpy as np
@@ -221,13 +222,13 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
-    return (
-        (df[df[2] == "GAZE_COORDS"])
-        .iloc[0:1, 3:5]
-        .to_string(header=False, index=False)
-        .replace(".00", "")
-        .split(" ")
+    list_res = ((df[df[2] == "GAZE_COORDS"])
+            .iloc[0:1, 3:5]
+            .to_string(header=False, index=False)
+            .replace(".00", "")
+            .split(" ")
     )
+    return [eval (i) for i in list_res]
 
 
 def _extract_TaskName(events: list[str]) -> str:
@@ -315,6 +316,12 @@ def edf2bids(
             metadata = yaml.load(f, Loader=SafeLoader)
 
     # to json
+
+    filename = os.path.splitext(input_file)[0]
+    substring_eyetrack = '_eyetrack'
+    substring_events = '_events'
+
+
     eyetrack_json = {
         "Manufacturer": "SR-Research",
         "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
@@ -343,9 +350,15 @@ def edf2bids(
         "StopTime": _extract_StopTime(events),
     }
 
-    with open(output_dir / "_eyetrack.json", "w") as outfile:
-        json.dump(eyetrack_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_dir / '_eyetrack.json'}")
+    if substring_eyetrack not in filename:
+        with open(output_dir / (filename + "_eyetrack.json"), "w") as outfile:
+            json.dump(eyetrack_json, outfile, indent=4)
+        e2b_log.info(f"file generated: {output_dir / (filename + '_eyetrack.json')}")
+    elif substring_eyetrack in filename: 
+        with open(output_dir / (filename + ".json"), "w") as outfile:
+            json.dump(eyetrack_json, outfile, indent=4)
+        e2b_log.info(f"file generated: {output_dir / (filename + '.json')}")
+       
 
     # Events.json Metadata
     events_json = {
@@ -359,11 +372,15 @@ def edf2bids(
         },
         "TaskName": _extract_TaskName(events),
     }
-
-    with open(output_dir / "_events.json", "w") as outfile:
-        json.dump(events_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_dir / '_events.json'}")
-
+    
+    if substring_events not in filename:
+        with open(output_dir / (filename + "_events.json"), "w") as outfile:
+            json.dump(events_json, outfile, indent=4)
+        e2b_log.info(f"file generated: {output_dir / (filename + '_events.json')}")
+    elif substring_events in filename: 
+        with open(output_dir / (filename + ".json"), "w") as outfile:
+            json.dump(events_json, outfile, indent=4)
+        e2b_log.info(f"file generated: {output_dir / (filename + '.json')}")
 
 if __name__ == "__main__":
     parser = global_parser()
