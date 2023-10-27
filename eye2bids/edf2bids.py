@@ -110,6 +110,7 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
     subprocess.run(["edf2asc", "-y", "-s", input_file, "-o", samples_asc_file])
     return Path(samples_asc_file).with_suffix(".asc")
 
+
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "CALIBRATION"]
 
@@ -296,22 +297,31 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
-def _samples_to_data_frame(samples_asc_file:str | Path) -> pd.DataFrame:
+def _samples_to_data_frame(samples_asc_file: str | Path) -> pd.DataFrame:
+    column_names = [
+        "eye_timestamp",
+        "eye1_x_coordinate",
+        "eye1_y_coordinate",
+        "eye1_pupil_size",
+        "eye2_x_coordinate",
+        "eye2_y_coordinate",
+        "eye2_pupil_size",
+    ]
 
-    column_names = ['eye_timestamp',
-                    'eye1_x_coordinate', 'eye1_y_coordinate', 'eye1_pupil_size',
-                    'eye2_x_coordinate', 'eye2_y_coordinate', 'eye2_pupil_size']
-    
     data = {name: [] for name in column_names}
 
-    with open(samples_asc_file, "r") as file:
+    with open(samples_asc_file) as file:
         for line in file:
             columns = line.strip().split("\t")
             for i in range(len(column_names)):
                 if i < len(columns):
                     data[column_names[i]].append(columns[i])
 
-    data = {key: value for key, value in data.items() if any(val not in ("", "...") for val in value)}
+    data = {
+        key: value
+        for key, value in data.items()
+        if any(val not in ("", "...") for val in value)
+    }
 
     return pd.DataFrame(data)
 
@@ -344,12 +354,11 @@ def edf2bids(
         with open(metadata_file) as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
-    # file naming check    
+    # file naming check
 
     filename = os.path.splitext(input_file)[0]
-    substring_eyetrack = '_eyetrack'
-    substring_events = '_events'
-
+    substring_eyetrack = "_eyetrack"
+    substring_events = "_events"
 
     eyetrack_json = {
         "Manufacturer": "SR-Research",
@@ -409,21 +418,18 @@ def edf2bids(
         with open(output_dir / (filename + ".json"), "w") as outfile:
             json.dump(events_json, outfile, indent=4)
         e2b_log.info(f"file generated: {output_dir / (filename + '.json')}")
-   
-   
-   # Samples to eyetrack.tsv
+
+    # Samples to eyetrack.tsv
     eyetrack_tsv = _samples_to_data_frame(samples_asc_file)
 
     if substring_eyetrack not in filename:
         with open(output_dir / (filename + "_eyetrack.tsv"), "w") as outfile:
-            eyetrack_tsv.to_csv(outfile, sep='\t', index=False, compression='gzip')
+            eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
         e2b_log.info(f"file generated: {output_dir / (filename + '_eyetrack.tsv')}")
-    elif substring_eyetrack in filename: 
+    elif substring_eyetrack in filename:
         with open(output_dir / (filename + ".tsv"), "w") as outfile:
-            eyetrack_tsv.to_csv(outfile, sep='\t', index=False, compression='gzip')
+            eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
         e2b_log.info(f"file generated: {output_dir / (filename + '.tsv')}")
-
-
 
 
 if __name__ == "__main__":
