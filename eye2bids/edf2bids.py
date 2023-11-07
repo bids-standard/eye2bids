@@ -115,6 +115,7 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
 
 
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
+    print(df)
     return df[df[3] == "CALIBRATION"]
 
 

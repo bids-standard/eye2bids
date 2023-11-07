@@ -99,6 +99,9 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
 def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
+    print(asc_test_files(input_dir=input_dir))
+    print(asc_file)
+    print(str(asc_file).endswith("samples.asc"))
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_ScreenResolution(df_ms_reduced) == expected
 
