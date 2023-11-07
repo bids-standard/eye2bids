@@ -10,7 +10,13 @@ def data_dir() -> Path:
 
 
 def asc_test_files(input_dir: Path = data_dir()) -> list[Path]:
-    return list(input_dir.glob("**/*.asc"))
+    files = input_dir.glob("**/*.asc")
+    tmp = [
+        f
+        for f in files
+        if (not str(f).endswith("events.asc") and not str(f).endswith("samples.asc"))
+    ]
+    return tmp
 
 
 def edf_test_files(input_dir: Path = data_dir()) -> list[Path]:

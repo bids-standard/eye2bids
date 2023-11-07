@@ -1,11 +1,9 @@
-tests/data/test_data.zip
-tests/data/**/*.json
-**/*.asc
-**/*.edf
-**/*.EDF
+tests/data/osf
+tests/data/output
 eye2bids/_version.py
-events.json
-eyetrack.json
+*events.json
+*eyetrack.json
+*eyetrack.tsv
 
 # General
 .DS_Store
