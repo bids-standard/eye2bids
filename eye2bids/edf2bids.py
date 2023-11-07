@@ -99,6 +99,8 @@ Make sure to install it from https://www.sr-research.com/."""
 
 def _convert_edf_to_asc_events(input_file: str | Path) -> Path:
     """Convert edf to asc - events."""
+    if isinstance(input_file, str):
+        input_file = Path(input_file)
     events_asc_file = (input_file.parent) / (input_file.stem + "_events")
     subprocess.run(["edf2asc", "-y", "-e", input_file, "-o", events_asc_file])
     return Path(events_asc_file).with_suffix(".asc")
@@ -106,6 +108,8 @@ def _convert_edf_to_asc_events(input_file: str | Path) -> Path:
 
 def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
     """Convert edf to asc - samples."""
+    if isinstance(input_file, str):
+        input_file = Path(input_file)
     samples_asc_file = (input_file.parent) / (input_file.stem + "_samples")
     subprocess.run(["edf2asc", "-y", "-s", input_file, "-o", samples_asc_file])
     return Path(samples_asc_file).with_suffix(".asc")
@@ -257,8 +261,10 @@ def _extract_StartTime(events: list[str]) -> int:
     if len(StartTime) > 1:
         e2b_log.info(
             """Your input file contains multiple start times.\n
-             As this is not seen as good practice in eyetracking experiments, only the first start time will be kept for the metadata file.\n
-             Please consider changing your code accordingly for future eyetracking experiments.\n"""
+             As this is not seen as good practice in eyetracking experiments, \n
+             only the first start time will be kept for the metadata file. \n
+             Please consider changing your code accordingly
+             for future eyetracking experiments.\n"""
         )
         return StartTime[0]
     return StartTime
@@ -273,8 +279,10 @@ def _extract_StopTime(events: list[str]) -> int:
     if len(StopTime) > 1:
         e2b_log.info(
             """Your input file contains multiple stop times.\n
-             As this is not seen as good practice in eyetracking experiments, only the last stop time will be kept for the metadata file.\n
-             Please consider changing your code accordingly for future eyetracking experiments.\n"""
+             As this is not seen as good practice in eyetracking experiments, \n
+             only the last stop time will be kept for the metadata file. \n
+             Please consider changing your code accordingly
+             for future eyetracking experiments.\n"""
         )
         return StopTime[-1]
     return StopTime
@@ -308,7 +316,7 @@ def _samples_to_data_frame(samples_asc_file: str | Path) -> pd.DataFrame:
         "eye2_pupil_size",
     ]
 
-    data = {name: [] for name in column_names}
+    data: dict[str, list[str]] = {name: [] for name in column_names}
 
     with open(samples_asc_file) as file:
         for line in file:
