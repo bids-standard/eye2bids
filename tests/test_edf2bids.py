@@ -39,7 +39,7 @@ def test_convert_edf_to_asc_events(input_file):
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 @pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
 def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
-    input_dir = eyelink_test_data_dir / "decisions"
+    input_dir = eyelink_test_data_dir / "satf"
     input_file = edf_test_files(input_dir=input_dir)[0]
 
     output_dir = data_dir() / "output"
@@ -61,7 +61,7 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
     assert expected_data_sidecar.exists()
     with open(expected_data_sidecar) as f:
         eyetrack = json.load(f)
-    assert eyetrack["SamplingFrequency"] == 1000
+    assert eyetrack["SamplingFrequency"] == 500
     assert eyetrack["RecordedEye"] == "Right"
 
 
@@ -99,9 +99,6 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
 def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
-    print(asc_test_files(input_dir=input_dir))
-    print(asc_file)
-    print(str(asc_file).endswith("samples.asc"))
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_ScreenResolution(df_ms_reduced) == expected
 

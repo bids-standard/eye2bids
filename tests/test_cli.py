@@ -40,3 +40,18 @@ def test_edf_cli(use_relative_path, metadata_file, output_dir, eyelink_test_data
         command.extend(["--output_dir", output_dir])
 
     cli(command)
+
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+@pytest.mark.parametrize(
+    "input_file", edf_test_files(input_dir=data_dir() / "osf" / "eyelink")
+)
+def test_all_edf_files(input_file):
+    command = [
+        "eye2bids",
+        "--input_file",
+        str(input_file),
+        "--output_dir",
+        str(data_dir() / "output"),
+    ]
+    cli(command)

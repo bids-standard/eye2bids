@@ -115,7 +115,6 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
 
 
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
-    print(df)
     return df[df[3] == "CALIBRATION"]
 
 
@@ -350,7 +349,6 @@ def edf2bids(
 
     # CONVERSION events
     events_asc_file = _convert_edf_to_asc_events(input_file)
-    samples_asc_file = _convert_edf_to_asc_samples(input_file)
 
     events = _load_asc_file(events_asc_file)
     df_ms = _load_asc_file_as_df(events_asc_file)
@@ -362,12 +360,7 @@ def edf2bids(
         with open(metadata_file) as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
-    # file naming check
-
-    filename = Path(input_file).stem
-    substring_eyetrack = "_eyetrack"
-    substring_events = "_events"
-
+    # events.json Metadata
     eyetrack_json = {
         "Manufacturer": "SR-Research",
         "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
@@ -396,13 +389,14 @@ def edf2bids(
         "StopTime": _extract_StopTime(events),
     }
 
-    suffix = "_eyetrack" if substring_eyetrack not in filename else ""
-    output_filename = output_dir / f"{filename}{suffix}.json"
+    output_filename = generate_output_filename(
+        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="json"
+    )
     with open(output_filename, "w") as outfile:
         json.dump(eyetrack_json, outfile, indent=4)
     e2b_log.info(f"file generated: {output_filename}")
 
-    # Events.json Metadata
+    # events.json Metadata
     events_json = {
         "InstitutionAddress": metadata.get("InstitutionAddress"),
         "InstitutionName": metadata.get("InstitutionName"),
@@ -415,26 +409,33 @@ def edf2bids(
         "TaskName": _extract_TaskName(events),
     }
 
-    if substring_events not in filename:
-        with open(output_dir / (filename + "_events.json"), "w") as outfile:
-            json.dump(events_json, outfile, indent=4)
-        e2b_log.info(f"file generated: {output_dir / (filename + '_events.json')}")
-    else:
-        with open(output_dir / (filename + ".json"), "w") as outfile:
-            json.dump(events_json, outfile, indent=4)
-        e2b_log.info(f"file generated: {output_dir / (filename + '.json')}")
+    output_filename = generate_output_filename(
+        output_dir=output_dir, input_file=input_file, suffix="_events", extension="json"
+    )
+    with open(output_filename, "w") as outfile:
+        json.dump(events_json, outfile, indent=4)
+    e2b_log.info(f"file generated: {output_filename}")
 
     # Samples to eyetrack.tsv
+    samples_asc_file = _convert_edf_to_asc_samples(input_file)
     eyetrack_tsv = _samples_to_data_frame(samples_asc_file)
 
-    if substring_eyetrack not in filename:
-        with open(output_dir / (filename + "_eyetrack.tsv"), "w") as outfile:
-            eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
-        e2b_log.info(f"file generated: {output_dir / (filename + '_eyetrack.tsv')}")
-    else:
-        with open(output_dir / (filename + ".tsv"), "w") as outfile:
-            eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
-        e2b_log.info(f"file generated: {output_dir / (filename + '.tsv')}")
+    output_filename = generate_output_filename(
+        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="tsv"
+    )
+    with open(output_filename, "w") as outfile:
+        eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
+    e2b_log.info(f"file generated: {output_filename}")
+
+
+def generate_output_filename(
+    output_dir: Path, input_file: Path, suffix: str, extension: str
+) -> Path:
+    """Generate output filename."""
+    filename = Path(input_file).stem
+    if filename.endswith(suffix):
+        suffix = ""
+    return output_dir / f"{filename}{suffix}.{extension}"
 
 
 if __name__ == "__main__":
