@@ -1,8 +1,4 @@
-tests/data/test_data.zip
-tests/data/**/*.json
-**/*.asc
-**/*.edf
-**/*.EDF
+tests/data/osf
 eye2bids/_version.py
 events.json
 eyetrack.json
