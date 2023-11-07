@@ -1,0 +1,14 @@
+{
+    "InstitutionAddress": null,
+    "InstitutionName": null,
+    "StimulusPresentation": {
+        "ScreenDistance": null,
+        "ScreenRefreshRate": null,
+        "ScreenSize": null,
+        "ScreenResolution": [
+            1919,
+            1079
+        ]
+    },
+    "TaskName": ""
+}

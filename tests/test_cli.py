@@ -15,13 +15,11 @@ def root_dir() -> Path:
     return Path(__file__).parent.parent
 
 
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 @pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
 @pytest.mark.parametrize("output_dir", [data_dir() / "output", None])
 @pytest.mark.parametrize("use_relative_path", [False, True])
 def test_edf_cli(use_relative_path, metadata_file, output_dir, eyelink_test_data_dir):
-    if not _check_edf2asc_present():
-        pytest.skip("edf2asc missing")
-
     input_dir = eyelink_test_data_dir / "decisions"
     input_file = edf_test_files(input_dir=input_dir)[0]
 

@@ -7,7 +7,7 @@ import pytest
 
 from eye2bids.edf2bids import (
     _check_edf2asc_present,
-    _convert_edf_to_asc,
+    _convert_edf_to_asc_events,
     _extract_AverageCalibrationError,
     _extract_CalibrationPosition,
     _extract_CalibrationType,
@@ -29,19 +29,16 @@ from eye2bids.edf2bids import (
 from .conftest import asc_test_files, data_dir, edf_test_files
 
 
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 @pytest.mark.parametrize("input_file", edf_test_files())
-def test_convert_edf_to_asc(input_file):
-    if not _check_edf2asc_present():
-        pytest.skip("edf2asc missing")
-    asc_file = _convert_edf_to_asc(input_file)
+def test_convert_edf_to_asc_events(input_file):
+    asc_file = _convert_edf_to_asc_events(input_file)
     assert Path(asc_file).exists()
 
 
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 @pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
 def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
-    if not _check_edf2asc_present():
-        pytest.skip("edf2asc missing")
-
     input_dir = eyelink_test_data_dir / "decisions"
     input_file = edf_test_files(input_dir=input_dir)[0]
 
@@ -54,13 +51,15 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    assert (output_dir / "events.json").exists()
-    with open(output_dir / "events.json") as f:
+    expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
+    assert expected_events_sidecar.exists()
+    with open(expected_events_sidecar) as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
 
-    assert (output_dir / "eyetrack.json").exists()
-    with open(output_dir / "eyetrack.json") as f:
+    expected_data_sidecar = output_dir / f"{input_file.stem}_eyetrack.json"
+    assert expected_data_sidecar.exists()
+    with open(expected_data_sidecar) as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 1000
     assert eyetrack["RecordedEye"] == "Right"

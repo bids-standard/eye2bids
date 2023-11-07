@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 from pathlib import Path
 
@@ -364,7 +363,7 @@ def edf2bids(
 
     # file naming check
 
-    filename = os.path.splitext(input_file)[0]
+    filename = Path(input_file).stem
     substring_eyetrack = "_eyetrack"
     substring_events = "_events"
 
@@ -396,14 +395,11 @@ def edf2bids(
         "StopTime": _extract_StopTime(events),
     }
 
-    if substring_eyetrack not in filename:
-        with open(output_dir / (filename + "_eyetrack.json"), "w") as outfile:
-            json.dump(eyetrack_json, outfile, indent=4)
-        e2b_log.info(f"file generated: {output_dir / (filename + '_eyetrack.json')}")
-    elif substring_eyetrack in filename:
-        with open(output_dir / (filename + ".json"), "w") as outfile:
-            json.dump(eyetrack_json, outfile, indent=4)
-        e2b_log.info(f"file generated: {output_dir / (filename + '.json')}")
+    suffix = "_eyetrack" if substring_eyetrack not in filename else ""
+    output_filename = output_dir / f"{filename}{suffix}.json"
+    with open(output_filename, "w") as outfile:
+        json.dump(eyetrack_json, outfile, indent=4)
+    e2b_log.info(f"file generated: {output_filename}")
 
     # Events.json Metadata
     events_json = {
@@ -422,7 +418,7 @@ def edf2bids(
         with open(output_dir / (filename + "_events.json"), "w") as outfile:
             json.dump(events_json, outfile, indent=4)
         e2b_log.info(f"file generated: {output_dir / (filename + '_events.json')}")
-    elif substring_events in filename:
+    else:
         with open(output_dir / (filename + ".json"), "w") as outfile:
             json.dump(events_json, outfile, indent=4)
         e2b_log.info(f"file generated: {output_dir / (filename + '.json')}")
@@ -434,7 +430,7 @@ def edf2bids(
         with open(output_dir / (filename + "_eyetrack.tsv"), "w") as outfile:
             eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
         e2b_log.info(f"file generated: {output_dir / (filename + '_eyetrack.tsv')}")
-    elif substring_eyetrack in filename:
+    else:
         with open(output_dir / (filename + ".tsv"), "w") as outfile:
             eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
         e2b_log.info(f"file generated: {output_dir / (filename + '.tsv')}")
