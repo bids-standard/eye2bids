@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from eye2bids.edf2bids import (
@@ -63,6 +64,29 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 500
     assert eyetrack["RecordedEye"] == "Right"
+
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    assert expected_events_sidecar.exists()
+
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_edf_nan_in_tsv(eyelink_test_data_dir):
+    """Check that dots '.' are converted to NaN in the tsv file."""
+    input_dir = eyelink_test_data_dir / "emg"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(
+        input_file=input_file,
+        output_dir=output_dir,
+    )
+
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    df = pd.read_csv(expected_events_sidecar, sep="\t")
+    count = sum(i == "." for i in df["eye1_x_coordinate"])
+    assert count == 0
 
 
 @pytest.mark.parametrize(

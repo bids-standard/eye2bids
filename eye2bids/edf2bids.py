@@ -419,12 +419,17 @@ def edf2bids(
     # Samples to eyetrack.tsv
     samples_asc_file = _convert_edf_to_asc_samples(input_file)
     eyetrack_tsv = _samples_to_data_frame(samples_asc_file)
+    # strip blankspcace and convert empty cells to nan
+    eyetrack_tsv = eyetrack_tsv.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    eyetrack_tsv = eyetrack_tsv.replace(".", np.nan, regex=False)
 
     output_filename = generate_output_filename(
         output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="tsv"
     )
     with open(output_filename, "w") as outfile:
-        eyetrack_tsv.to_csv(outfile, sep="\t", index=False, compression="gzip")
+        eyetrack_tsv.to_csv(
+            outfile, sep="\t", index=False, compression="gzip", na_rep="n/a"
+        )
     e2b_log.info(f"file generated: {output_filename}")
 
 
