@@ -123,10 +123,18 @@ def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
 
 
 def _extract_CalibrationCount(df: pd.DataFrame) -> int:
+    if _extract_RecordedEye == "Both":
+        return len(_calibrations(df)) // 2
     return len(_calibrations(df))
 
 
 def _get_calibration_positions(df: pd.DataFrame) -> list[int]:
+    if _extract_RecordedEye == "Both":
+        return (
+        np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
+        .astype(int)
+        .tolist()
+    )[::2]    
     return (
         np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
         .astype(int)
