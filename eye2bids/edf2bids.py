@@ -131,10 +131,10 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
 def _get_calibration_positions(df: pd.DataFrame) -> list[int]:
     if _extract_RecordedEye(df) == "Both":
         return (
-        np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
-        .astype(int)
-        .tolist()
-    )[::2]    
+            np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
+            .astype(int)
+            .tolist()
+        )[::2]
     return (
         np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
         .astype(int)
@@ -197,7 +197,10 @@ def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
     if not _has_validation(df):
         return []
     if _extract_RecordedEye(df) == "Both" and _extract_CalibrationCount(df) > 1:
-        return np.array_split((np.array(_validations(df)[[11]]).astype(float).tolist()), _extract_CalibrationCount(df))
+        return np.array_split(
+            (np.array(_validations(df)[[11]]).astype(float).tolist()),
+            _extract_CalibrationCount(df),
+        )
     return np.array(_validations(df)[[11]]).astype(float).tolist()
 
 
@@ -205,7 +208,10 @@ def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
     if not _has_validation(df):
         return []
     if _extract_RecordedEye(df) == "Both" and _extract_CalibrationCount(df) > 1:
-        return np.array_split((np.array(_validations(df)[[9]]).astype(float).tolist()), _extract_CalibrationCount(df))
+        return np.array_split(
+            (np.array(_validations(df)[[9]]).astype(float).tolist()),
+            _extract_CalibrationCount(df),
+        )
     return np.array(_validations(df)[[9]]).astype(float).tolist()
 
 
