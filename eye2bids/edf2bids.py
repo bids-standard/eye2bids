@@ -198,9 +198,9 @@ def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
         return []
     if _extract_RecordedEye(df) == "Both" and _extract_CalibrationCount(df) > 1:
         return np.array_split(
-            (np.array(_validations(df)[[11]]).astype(float).tolist()),
+            np.array(_validations(df)[[11]]),
             _extract_CalibrationCount(df),
-        )
+        ).astype(float).tolist()
     return np.array(_validations(df)[[11]]).astype(float).tolist()
 
 
@@ -209,9 +209,9 @@ def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
         return []
     if _extract_RecordedEye(df) == "Both" and _extract_CalibrationCount(df) > 1:
         return np.array_split(
-            (np.array(_validations(df)[[9]]).astype(float).tolist()),
+            np.array(_validations(df)[[9]]),
             _extract_CalibrationCount(df),
-        )
+        ).astype(float).tolist()
     return np.array(_validations(df)[[9]]).astype(float).tolist()
 
 
