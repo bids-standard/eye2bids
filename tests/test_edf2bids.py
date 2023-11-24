@@ -88,6 +88,43 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     count = sum(i == "." for i in df["eye1_x_coordinate"])
     assert count == 0
 
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
+    """Check that values for both eyes were extracted by number of columns (function _samples_to_data_frame)"""
+    input_dir = eyelink_test_data_dir / "2eyes"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(
+        input_file=input_file,
+        output_dir=output_dir,
+    )
+
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    df = pd.read_csv(expected_events_sidecar, sep="\t")
+    number_columns = len(df.columns)
+    assert number_columns == 7   
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_number_columns_1eye_tsv(eyelink_test_data_dir):
+    """Check that values for one eye were extracted by number of columns (function _samples_to_data_frame)"""
+    input_dir = eyelink_test_data_dir / "rest"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(
+        input_file=input_file,
+        output_dir=output_dir,
+    )
+
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    df = pd.read_csv(expected_events_sidecar, sep="\t")
+    number_columns = len(df.columns)
+    assert number_columns == 4
 
 @pytest.mark.parametrize(
     "folder, expected",
@@ -99,6 +136,7 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
         ("rest", "HV13"),
         ("satf", "HV9"),
         ("vergence", "HV9"),
+        ("2eyes", "HV13"),
     ],
 )
 def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
@@ -118,8 +156,10 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
         ("pitracker", [1919, 1079]),
         ("satf", [1919, 1079]),
         ("vergence", [1919, 1079]),
+        ("2eyes", [1919, 1079]),
     ],
 )
+
 def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
     asc_file = asc_test_files(input_dir=input_dir)[0]
@@ -137,6 +177,7 @@ def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
         ("rest", "pixel"),
         ("satf", ""),
         ("vergence", ""),
+        ("2eyes", "pixel"),
     ],
 )
 def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
@@ -201,6 +242,26 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
         ),
         ("satf", []),
         ("vergence", []),
+        (
+            "2eyes", 
+            [
+                [
+                    [960, 540],
+                    [960, 732],
+                    [1126, 444],
+                    [576, 540],
+                    [576, 540],
+                    [768, 873],
+                    [1152, 873],
+                    [768, 207],
+                    [1152, 207],
+                    [794, 636],
+                    [1126, 636],
+                    [794, 444],
+                    [960, 348],      
+                ]
+            ]
+        ),
     ],
 )
 def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
@@ -220,6 +281,7 @@ def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
         ("rest", "P-CR"),
         ("satf", "P-CR"),
         ("vergence", "P-CR"),
+        ("2eyes", "P-CR"),
     ],
 )
 def test_extract_EyeTrackingMethod(folder, expected, eyelink_test_data_dir):
@@ -239,6 +301,7 @@ def test_extract_EyeTrackingMethod(folder, expected, eyelink_test_data_dir):
         ("rest", 1000),
         ("satf", 500),
         ("vergence", 1000),
+        ("2eyes", 1000),
     ],
 )
 def test_extract_SamplingFrequency(folder, expected, eyelink_test_data_dir):
@@ -258,6 +321,7 @@ def test_extract_SamplingFrequency(folder, expected, eyelink_test_data_dir):
         ("rest", "CENTROID"),
         ("satf", "CENTROID"),
         ("vergence", "CENTROID"),
+        ("2eyes", "CENTROID"),
     ],
 )
 def test_extract_PupilFitMethod(folder, expected, eyelink_test_data_dir):
@@ -277,6 +341,7 @@ def test_extract_PupilFitMethod(folder, expected, eyelink_test_data_dir):
         ("rest", "CLO-ZBD04"),
         ("satf", "CL1-ACF05"),
         ("vergence", "CL1-72N02"),
+        ("2eyes", "CLG-BAF38"),
     ],
 )
 def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
@@ -296,6 +361,7 @@ def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
         ("rest", "Left"),
         ("satf", "Right"),
         ("vergence", "Both"),
+        ("2eyes", "Both"),
     ],
 )
 def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
@@ -315,6 +381,7 @@ def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
         ("rest", "EYELINK II CL v5.09 Nov 17 2015"),
         ("satf", "EYELINK II CL v4.594 Jul  6 2012"),
         ("vergence", "EYELINK II CL v4.56 Aug 18 2010"),
+        ("2eyes", "EYELINK II CL v5.12 May 12 2017"),
     ],
 )
 def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir):
@@ -334,6 +401,7 @@ def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir)
         ("rest", [[0.9]]),
         ("satf", []),
         ("vergence", []),
+        ("2eyes", [[0.62], [1.21]],),
     ],
 )
 def test_extract_MaximalCalibrationError(folder, expected, eyelink_test_data_dir):
@@ -353,6 +421,7 @@ def test_extract_MaximalCalibrationError(folder, expected, eyelink_test_data_dir
         ("rest", [[0.65]]),
         ("satf", []),
         ("vergence", []),
+        ("2eyes", [[0.29], [0.35]],),
     ],
 )
 def test_extract_AverageCalibrationError(folder, expected, eyelink_test_data_dir):
