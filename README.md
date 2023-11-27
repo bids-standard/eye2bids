@@ -81,19 +81,4 @@ You can build the docker image with the following command:
 docker build -t eye2bids:latest .
 ```
 
-## Contributing
-
-Make sure you install eye2bids in editable mode (see above) and install the development dependencies:
-
-```bash
-pip install --editable .[dev]
-```
-
-To run the tests, you need to install the [test data from OSF](https://osf.io/jdv7n/)
-by running the following command:
-
-```bash
-python tools/download_test_data.py
-```
-
 ## Related projects

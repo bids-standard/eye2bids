@@ -91,7 +91,10 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
-    """Check that values for both eyes were extracted by number of columns (function _samples_to_data_frame)"""
+    """Check that values for both eyes were extracted by number of columns.
+
+    function _samples_to_data_frame
+    """
     input_dir = eyelink_test_data_dir / "2eyes"
     input_file = edf_test_files(input_dir=input_dir)[0]
 
@@ -111,8 +114,12 @@ def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_number_columns_1eye_tsv(eyelink_test_data_dir):
-    """Check that values for one eye were extracted by number of columns (function _samples_to_data_frame)"""
+    """Check that values for one eye were extracted by number of columns.
+
+    function _samples_to_data_frame.
+    """
     input_dir = eyelink_test_data_dir / "rest"
+    print(edf_test_files(input_dir=input_dir))
     input_file = edf_test_files(input_dir=input_dir)[0]
 
     output_dir = data_dir() / "output"
