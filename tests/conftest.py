@@ -10,7 +10,7 @@ def data_dir() -> Path:
     return Path(__file__).parent / "data"
 
 
-def asc_test_files(input_dir: Path = data_dir(), suffix: str = '*') -> list[Path]:
+def asc_test_files(input_dir: Path = data_dir(), suffix: str = "*") -> list[Path]:
     files = input_dir.glob(f"**/{suffix}.asc")
     tmp = list(files)
     if not tmp:
