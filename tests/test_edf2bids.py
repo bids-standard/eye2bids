@@ -130,7 +130,7 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    expected_events_sidecar = output_dir / f"{input_file.stem}.tsv"
     df = pd.read_csv(expected_events_sidecar, sep="\t")
     number_columns = len(df.columns)
     assert number_columns == 4
@@ -139,7 +139,6 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", "HV9"),
         ("emg", "HV9"),
         ("lt", "HV9"),
         ("pitracker", "HV9"),
@@ -151,7 +150,7 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
 )
 def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationType(df_ms_reduced) == expected
 
@@ -160,7 +159,6 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", [1919, 1079]),
         ("emg", [1919, 1079]),
         ("lt", [1919, 1079]),
         ("pitracker", [1919, 1079]),
@@ -171,7 +169,7 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_ScreenResolution(df_ms_reduced) == expected
 
@@ -179,7 +177,6 @@ def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", ""),
         ("emg", ""),
         ("lt", "pixel"),
         ("pitracker", ""),
@@ -191,7 +188,7 @@ def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationUnit(df_ms_reduced) == expected
 
@@ -199,7 +196,6 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", []),
         ("emg", []),
         (
             "lt",
@@ -236,8 +232,8 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                     [960, 540],
                     [960, 732],
                     [1126, 444],
-                    [1344, 540],
                     [576, 540],
+                    [1344, 540],
                     [768, 873],
                     [1152, 873],
                     [768, 207],
@@ -259,7 +255,7 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                     [960, 732],
                     [1126, 444],
                     [576, 540],
-                    [576, 540],
+                    [1344, 540],
                     [768, 873],
                     [1152, 873],
                     [768, 207],
@@ -275,7 +271,7 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_CalibrationPosition(df_ms_reduced) == expected
 
@@ -283,7 +279,6 @@ def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", "P-CR"),
         ("emg", "P-CR"),
         ("lt", "P-CR"),
         ("pitracker", "P-CR"),
@@ -295,7 +290,7 @@ def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_EyeTrackingMethod(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     events = _load_asc_file(asc_file)
     assert _extract_EyeTrackingMethod(events) == expected
 
@@ -303,7 +298,6 @@ def test_extract_EyeTrackingMethod(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", 1000),
         ("emg", 1000),
         ("lt", 1000),
         ("pitracker", 1000),
@@ -315,7 +309,7 @@ def test_extract_EyeTrackingMethod(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_SamplingFrequency(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_SamplingFrequency(df_ms_reduced) == expected
 
@@ -323,7 +317,6 @@ def test_extract_SamplingFrequency(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", "ELLIPSE"),
         ("emg", "ELLIPSE"),
         ("lt", "CENTROID"),
         ("pitracker", "CENTROID"),
@@ -335,7 +328,7 @@ def test_extract_SamplingFrequency(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_PupilFitMethod(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_PupilFitMethod(df_ms_reduced) == expected
 
@@ -343,7 +336,6 @@ def test_extract_PupilFitMethod(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", "CLG-BBF01"),
         ("emg", "CLG-BBF01"),
         ("lt", "CLG-BCC29"),
         ("pitracker", "CLG-BAF22"),
@@ -355,7 +347,7 @@ def test_extract_PupilFitMethod(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     events = _load_asc_file(asc_file)
     assert _extract_DeviceSerialNumber(events) == expected
 
@@ -363,7 +355,6 @@ def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", "Right"),
         ("emg", "Right"),
         ("lt", "Left"),
         ("pitracker", "Right"),
@@ -375,7 +366,7 @@ def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_RecordedEye(df_ms_reduced) == expected
 
@@ -383,7 +374,6 @@ def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", "EYELINK II CL v5.04 Sep 25 2014"),
         ("emg", "EYELINK II CL v5.04 Sep 25 2014"),
         ("lt", "EYELINK II CL v5.15 Jan 24 2018"),
         ("pitracker", "EYELINK II CL v5.01 Jan 16 2014"),
@@ -395,7 +385,7 @@ def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
 )
 def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     events = _load_asc_file(asc_file)
     assert _extract_ManufacturersModelName(events) == expected
 
@@ -403,7 +393,6 @@ def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir)
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", []),
         ("emg", []),
         ("lt", [[0.32], [0.37]]),
         ("pitracker", []),
@@ -418,7 +407,7 @@ def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir)
 )
 def test_extract_MaximalCalibrationError(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms = _load_asc_file_as_df(asc_file)
     assert _extract_MaximalCalibrationError(df_ms) == expected
 
@@ -426,7 +415,6 @@ def test_extract_MaximalCalibrationError(folder, expected, eyelink_test_data_dir
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("decisions", []),
         ("emg", []),
         ("lt", [[0.16], [0.18]]),
         ("pitracker", []),
@@ -441,6 +429,6 @@ def test_extract_MaximalCalibrationError(folder, expected, eyelink_test_data_dir
 )
 def test_extract_AverageCalibrationError(folder, expected, eyelink_test_data_dir):
     input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir)[0]
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms = _load_asc_file_as_df(asc_file)
     assert _extract_AverageCalibrationError(df_ms) == expected

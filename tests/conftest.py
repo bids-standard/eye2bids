@@ -10,20 +10,11 @@ def data_dir() -> Path:
     return Path(__file__).parent / "data"
 
 
-def asc_test_files(input_dir: Path = data_dir()) -> list[Path]:
-    files = input_dir.glob("**/*.asc")
-    tmp = [
-        f
-        for f in files
-        if (not str(f).endswith("events.asc") and not str(f).endswith("samples.asc"))
-    ]
+def asc_test_files(input_dir: Path = data_dir(), suffix: str = '*') -> list[Path]:
+    files = input_dir.glob(f"**/{suffix}.asc")
+    tmp = list(files)
     if not tmp:
-        warn(
-            f"No .asc file found in: {input_dir}."
-            "Found the following .asc,"
-            "but they either end with 'events' or 'samples':"
-            f"{list(files)}"
-        )
+        warn(f"No .asc file found in: {input_dir}.")
     return tmp
 
 
