@@ -4,6 +4,7 @@ eye2bids/_version.py
 *events.json
 *eyetrack.json
 *eyetrack.tsv
+tmp
 
 # General
 .DS_Store

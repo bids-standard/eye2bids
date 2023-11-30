@@ -40,11 +40,11 @@ def cli(argv: Sequence[str] = sys.argv) -> None:
 
     args, _ = parser.parse_known_args(argv[1:])
 
-    input_file = Path(args.input_file).resolve()
+    input_file = Path(args.input_file).absolute()
 
     metadata_file = args.metadata_file
     if metadata_file not in [None, ""]:
-        metadata_file = Path(metadata_file).resolve()
+        metadata_file = Path(metadata_file).absolute()
 
     output_dir = Path(args.output_dir).resolve()
 
