@@ -353,7 +353,8 @@ def edf2bids(
     if not events_asc_file.exists():
         e2b_log.error(
             "The following .edf input file could not be converted to .asc:"
-            f"{input_file}")        
+            f"{input_file}"
+        )
 
     events = _load_asc_file(events_asc_file)
     df_ms = _load_asc_file_as_df(events_asc_file)
@@ -426,7 +427,8 @@ def edf2bids(
     if not samples_asc_file.exists():
         e2b_log.error(
             "The following .edf input file could not be converted to .asc:"
-            f"{input_file}")      
+            f"{input_file}"
+        )
     eyetrack_tsv = _samples_to_data_frame(samples_asc_file)
     # strip blankspcace and convert empty cells to nan
     eyetrack_tsv = eyetrack_tsv.applymap(lambda x: x.strip() if isinstance(x, str) else x)
