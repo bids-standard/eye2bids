@@ -1,4 +1,7 @@
-"""Download test data from OSF, unzip and install in the correct location."""
+"""Download test data from OSF, unzip and install in the correct location.
+
+If rerun, all previous data is removed and redownloaded.
+"""
 
 import shutil
 import zipfile
