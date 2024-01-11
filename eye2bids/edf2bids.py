@@ -461,7 +461,7 @@ def edf2bids(
     eyetrack_tsv = eyetrack_tsv.replace(".", np.nan, regex=False)
 
     output_filename = generate_output_filename(
-        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="tsv"
+        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="tsv.gz"
     )
     with open(output_filename, "w") as outfile:
         eyetrack_tsv.to_csv(
