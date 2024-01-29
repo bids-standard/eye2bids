@@ -1,4 +1,5 @@
 """Main module for conversion of edf to bids compliant files."""
+
 from __future__ import annotations
 
 import json
