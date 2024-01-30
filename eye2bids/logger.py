@@ -1,4 +1,5 @@
 """General logger for the eye2bids package."""
+
 from __future__ import annotations
 
 import logging
