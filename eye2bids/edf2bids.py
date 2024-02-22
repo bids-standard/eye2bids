@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import subprocess
 from pathlib import Path
@@ -462,12 +463,16 @@ def edf2bids(
     eyetrack_tsv = eyetrack_tsv.replace(".", np.nan, regex=False)
 
     output_filename = generate_output_filename(
-        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="tsv"
+        output_dir=output_dir,
+        input_file=input_file,
+        suffix="_eyetrack",
+        extension="tsv.gz",
     )
-    with open(output_filename, "w") as outfile:
-        eyetrack_tsv.to_csv(
-            outfile, sep="\t", index=False, compression="gzip", na_rep="n/a"
-        )
+
+    content = eyetrack_tsv.to_csv(sep="\t", index=False, na_rep="n/a")
+    with gzip.open(output_filename, "wb") as f:
+        f.write(content.encode())
+
     e2b_log.info(f"file generated: {output_filename}")
 
 

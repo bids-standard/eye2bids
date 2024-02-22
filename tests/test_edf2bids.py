@@ -65,7 +65,7 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
     assert eyetrack["SamplingFrequency"] == 500
     assert eyetrack["RecordedEye"] == "Right"
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv.gz"
     assert expected_events_sidecar.exists()
 
 
@@ -83,7 +83,7 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv.gz"
     df = pd.read_csv(expected_events_sidecar, sep="\t")
     count = sum(i == "." for i in df["eye1_x_coordinate"])
     assert count == 0
@@ -106,7 +106,7 @@ def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv"
+    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv.gz"
     df = pd.read_csv(expected_events_sidecar, sep="\t")
     number_columns = len(df.columns)
     assert number_columns == 7
@@ -130,7 +130,7 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}.tsv"
+    expected_events_sidecar = output_dir / f"{input_file.stem}.tsv.gz"
     df = pd.read_csv(expected_events_sidecar, sep="\t")
     number_columns = len(df.columns)
     assert number_columns == 4
