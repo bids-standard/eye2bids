@@ -469,8 +469,8 @@ def edf2bids(
         extension="tsv.gz",
     )
 
-    content = eyetrack_tsv.to_csv(sep='\t', index=False, na_rep="n/a")
-    with gzip.open(output_filename, 'wb') as f:
+    content = eyetrack_tsv.to_csv(sep="\t", index=False, na_rep="n/a")
+    with gzip.open(output_filename, "wb") as f:
         f.write(content.encode())
 
     e2b_log.info(f"file generated: {output_filename}")
