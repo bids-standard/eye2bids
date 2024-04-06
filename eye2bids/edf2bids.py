@@ -419,7 +419,7 @@ def edf2bids(
         }
     for eye in ["left", "right"]:
         base_json["AverageCalibrationError"] = _extract_AverageCalibrationError(df_ms, eye=eye)
-        #     "AverageCalibrationError": 
+        #     "AverageCalibrationError":
         #     "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms, eye=eye),
         #     "CalibrationCount": _extract_CalibrationCount(df_ms_reduced, eye=eye),
         #     "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced, eye=eye),
