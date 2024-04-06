@@ -395,40 +395,46 @@ def edf2bids(
             metadata = yaml.load(f, Loader=SafeLoader)
 
     # events.json Metadata
-    eyetrack_json = {
-        "Manufacturer": "SR-Research",
-        "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
-        "EyeCameraSettings": metadata.get("EyeCameraSettings"),
-        "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
-        "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
-        "GazeMappingSettings": metadata.get("GazeMappingSettings"),
-        "RawDataFilters": metadata.get("RawDataFilters"),
-        "SampleCoordinateSystem": metadata.get("SampleCoordinateSystem"),
-        "SampleCoordinateUnits": metadata.get("SampleCoordinateUnits"),
-        "ScreenAOIDefinition": metadata.get("ScreenAOIDefinition"),
-        "SoftwareVersion": metadata.get("SoftwareVersion"),
-        "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
-        "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
-        "ManufacturersModelName": _extract_ManufacturersModelName(events),
-        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
-        "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms),
-        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
-        "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
-        "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
-        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
-        "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
-        "RecordedEye": _extract_RecordedEye(df_ms_reduced),
-        "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
-        "StartTime": _extract_StartTime(events),
-        "StopTime": _extract_StopTime(events),
-    }
+     base_json = {
+            "Manufacturer": "SR-Research",
+            "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
+            "EyeCameraSettings": metadata.get("EyeCameraSettings"),
+            "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
+            "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
+            "GazeMappingSettings": metadata.get("GazeMappingSettings"),
+            "RawDataFilters": metadata.get("RawDataFilters"),
+            "SampleCoordinateSystem": metadata.get("SampleCoordinateSystem"),
+            "SampleCoordinateUnits": metadata.get("SampleCoordinateUnits"),
+            "ScreenAOIDefinition": metadata.get("ScreenAOIDefinition"),
+            "SoftwareVersion": metadata.get("SoftwareVersion"),
+            "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
+            "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
+            "ManufacturersModelName": _extract_ManufacturersModelName(events),
+            "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
+            "CalibrationType": _extract_CalibrationType(df_ms_reduced),
+            "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
+            "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
+            "StartTime": _extract_StartTime(events),
+            "StopTime": _extract_StopTime(events),
+        }
+    for eye in ["left", "right"]:
+        base_json["AverageCalibrationError"] = _extract_AverageCalibrationError(df_ms, eye=eye)
+        #     "AverageCalibrationError":
+        #     "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms, eye=eye),
+        #     "CalibrationCount": _extract_CalibrationCount(df_ms_reduced, eye=eye),
+        #     "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced, eye=eye),
+        #     "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
+        #     "CalibrationType": _extract_CalibrationType(df_ms_reduced),
+        #     "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
+        #     "RecordedEye": eye,
+        # }
 
-    output_filename = generate_output_filename(
-        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="json"
-    )
-    with open(output_filename, "w") as outfile:
-        json.dump(eyetrack_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_filename}")
+        output_filename = generate_output_filename(
+            output_dir=output_dir, input_file=input_file, suffix="eye-1_eyetrack", extension="json"
+        )
+        with open(output_filename, "w") as outfile:
+            json.dump(base_json, outfile, indent=4)
+        e2b_log.info(f"file generated: {output_filename}")
 
     # events.json Metadata
     events_json = {
