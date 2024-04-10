@@ -52,7 +52,9 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
+    expected_events_sidecar = (
+        output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
+    )
     assert expected_events_sidecar.exists()
     with open(expected_events_sidecar) as f:
         events = json.load(f)
@@ -88,6 +90,7 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     count = sum(i == "." for i in df[0])
     assert count == 0
 
+
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_2files_eye1(eyelink_test_data_dir):
     """Check that for datafile with 2eyes 2 eye1 file is created and check input.
@@ -105,12 +108,15 @@ def test_2files_eye1(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_eyetrack_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physio.json"
+    expected_eyetrack_sidecar = (
+        output_dir / f"{input_file.stem}_recording-eye1_physio.json"
+    )
     assert expected_eyetrack_sidecar.exists()
     with open(expected_eyetrack_sidecar) as f:
         eyetrack = json.load(f)
     assert eyetrack["AverageCalibrationError"] == [[0.29]]
     assert eyetrack["RecordedEye"] == "Left"
+
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_2files_eye2(eyelink_test_data_dir):
@@ -129,7 +135,9 @@ def test_2files_eye2(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_eyetrack_sidecar = output_dir / f"{input_file.stem}_recording-eye2_physio.json"
+    expected_eyetrack_sidecar = (
+        output_dir / f"{input_file.stem}_recording-eye2_physio.json"
+    )
     assert expected_eyetrack_sidecar.exists()
     with open(expected_eyetrack_sidecar) as f:
         eyetrack = json.load(f)
