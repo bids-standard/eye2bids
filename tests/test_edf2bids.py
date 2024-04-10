@@ -52,21 +52,21 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
+    expected_events_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
     assert expected_events_sidecar.exists()
     with open(expected_events_sidecar) as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
 
-    expected_data_sidecar = output_dir / f"{input_file.stem}_eyetrack.json"
+    expected_data_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physio.json"
     assert expected_data_sidecar.exists()
     with open(expected_data_sidecar) as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 500
     assert eyetrack["RecordedEye"] == "Right"
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv.gz"
-    assert expected_events_sidecar.exists()
+    expected_events_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
+    assert expected_events_tsv.exists()
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -83,15 +83,63 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv.gz"
-    df = pd.read_csv(expected_events_sidecar, sep="\t")
-    count = sum(i == "." for i in df["eye1_x_coordinate"])
+    expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
+    df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
+    count = sum(i == "." for i in df[0])
     assert count == 0
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_2files_eye1(eyelink_test_data_dir):
+    """Check that for datafile with 2eyes 2 eye1 file is created and check input.
+
+    function _2eyesmode
+    """
+    input_dir = eyelink_test_data_dir / "2eyes"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(
+        input_file=input_file,
+        output_dir=output_dir,
+    )
+
+    expected_eyetrack_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physio.json"
+    assert expected_eyetrack_sidecar.exists()
+    with open(expected_eyetrack_sidecar) as f:
+        eyetrack = json.load(f)
+    assert eyetrack["AverageCalibrationError"] == [[0.29]]
+    assert eyetrack["RecordedEye"] == "Left"
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_2files_eye2(eyelink_test_data_dir):
+    """Check that for datafile with 2eyes 2 eye2 file is created and check input.
+
+    function _2eyesmode
+    """
+    input_dir = eyelink_test_data_dir / "2eyes"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(
+        input_file=input_file,
+        output_dir=output_dir,
+    )
+
+    expected_eyetrack_sidecar = output_dir / f"{input_file.stem}_recording-eye2_physio.json"
+    assert expected_eyetrack_sidecar.exists()
+    with open(expected_eyetrack_sidecar) as f:
+        eyetrack = json.load(f)
+    assert eyetrack["AverageCalibrationError"] == [[0.35]]
+    assert eyetrack["RecordedEye"] == "Right"
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
-    """Check that values for both eyes were extracted by number of columns.
+    """Check that values for only one eye were extracted in eye1-physio.tsv.gz by number of columns.
 
     function _samples_to_data_frame
     """
@@ -106,10 +154,10 @@ def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}_eyetrack.tsv.gz"
-    df = pd.read_csv(expected_events_sidecar, sep="\t")
+    expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
+    df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
     number_columns = len(df.columns)
-    assert number_columns == 7
+    assert number_columns == 4
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -130,8 +178,8 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_events_sidecar = output_dir / f"{input_file.stem}.tsv.gz"
-    df = pd.read_csv(expected_events_sidecar, sep="\t")
+    expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
+    df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
     number_columns = len(df.columns)
     assert number_columns == 4
 
@@ -360,8 +408,8 @@ def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
         ("pitracker", "Right"),
         ("rest", "Left"),
         ("satf", "Right"),
-        ("vergence", "Both"),
-        ("2eyes", "Both"),
+        ("vergence", ["Left", "Right"]),
+        ("2eyes", ["Left", "Right"]),
     ],
 )
 def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):

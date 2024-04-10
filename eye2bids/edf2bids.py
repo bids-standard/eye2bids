@@ -115,23 +115,29 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
     subprocess.run(["edf2asc", "-y", "-s", input_file, "-o", samples_asc_file])
     return Path(samples_asc_file).with_suffix(".asc")
 
+def _2eyesmode(df: pd.DataFrame) -> bool:
+    eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
+    if eye == "LR":
+        two_eyes = True
+    else:
+        two_eyes = False
+    return two_eyes
 
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "CALIBRATION"]
-
 
 def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
     return _calibrations(df).iloc[0:1, 2:3].to_string(header=False, index=False)
 
 
 def _extract_CalibrationCount(df: pd.DataFrame) -> int:
-    if _extract_RecordedEye(df) == "Both":
+    if _2eyesmode(df) == True:
         return len(_calibrations(df)) // 2
     return len(_calibrations(df))
 
 
 def _get_calibration_positions(df: pd.DataFrame) -> list[int]:
-    if _extract_RecordedEye(df) == "Both":
+    if _2eyesmode(df) == True:
         return (
             np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
             .astype(int)
@@ -198,30 +204,12 @@ def _has_validation(df: pd.DataFrame) -> bool:
 def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
     if not _has_validation(df):
         return []
-    if _extract_RecordedEye(df) == "Both" and _extract_CalibrationCount(df) > 1:
-        return (
-            np.array_split(
-                np.array(_validations(df)[[11]]),
-                _extract_CalibrationCount(df),
-            )
-            .astype(float)
-            .tolist()
-        )
     return np.array(_validations(df)[[11]]).astype(float).tolist()
 
 
 def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
     if not _has_validation(df):
         return []
-    if _extract_RecordedEye(df) == "Both" and _extract_CalibrationCount(df) > 1:
-        return (
-            np.array_split(
-                np.array(_validations(df)[[9]]),
-                _extract_CalibrationCount(df),
-            )
-            .astype(float)
-            .tolist()
-        )
     return np.array(_validations(df)[[9]]).astype(float).tolist()
 
 
@@ -256,8 +244,8 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
     elif eye == "R":
         return "Right"
     elif eye == "LR":
-        return "Both"
-    return ""
+        return ["Left", "Right"]
+    return "" 
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
@@ -331,36 +319,6 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     df_ms = _load_asc_file_as_df(events_asc_file)
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
-
-def _samples_to_data_frame(samples_asc_file: str | Path) -> pd.DataFrame:
-    column_names = [
-        "eye_timestamp",
-        "eye1_x_coordinate",
-        "eye1_y_coordinate",
-        "eye1_pupil_size",
-        "eye2_x_coordinate",
-        "eye2_y_coordinate",
-        "eye2_pupil_size",
-    ]
-
-    data: dict[str, list[str]] = {name: [] for name in column_names}
-
-    with open(samples_asc_file) as file:
-        for line in file:
-            columns = line.strip().split("\t")
-            for i in range(len(column_names)):
-                if i < len(columns):
-                    data[column_names[i]].append(columns[i])
-
-    data = {
-        key: value
-        for key, value in data.items()
-        if any(val not in ("", "...") for val in value)
-    }
-
-    return pd.DataFrame(data)
-
-
 def edf2bids(
     input_file: str | Path | None = None,
     metadata_file: str | Path | None = None,
@@ -394,44 +352,108 @@ def edf2bids(
         with open(metadata_file) as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
-    # events.json Metadata
-    eyetrack_json = {
-        "Manufacturer": "SR-Research",
-        "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
-        "EyeCameraSettings": metadata.get("EyeCameraSettings"),
-        "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
-        "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
-        "GazeMappingSettings": metadata.get("GazeMappingSettings"),
-        "RawDataFilters": metadata.get("RawDataFilters"),
-        "SampleCoordinateSystem": metadata.get("SampleCoordinateSystem"),
-        "SampleCoordinateUnits": metadata.get("SampleCoordinateUnits"),
-        "ScreenAOIDefinition": metadata.get("ScreenAOIDefinition"),
-        "SoftwareVersion": metadata.get("SoftwareVersion"),
-        "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
-        "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
-        "ManufacturersModelName": _extract_ManufacturersModelName(events),
-        "AverageCalibrationError": _extract_AverageCalibrationError(df_ms),
-        "MaximalCalibrationError": _extract_MaximalCalibrationError(df_ms),
-        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
-        "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
-        "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
-        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
-        "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
-        "RecordedEye": _extract_RecordedEye(df_ms_reduced),
-        "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
-        "StartTime": _extract_StartTime(events),
-        "StopTime": _extract_StopTime(events),
-    }
 
-    output_filename = generate_output_filename(
-        output_dir=output_dir, input_file=input_file, suffix="_eyetrack", extension="json"
-    )
-    with open(output_filename, "w") as outfile:
-        json.dump(eyetrack_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_filename}")
 
-    # events.json Metadata
+    # eye-physio.json Metadata
+    base_json = {
+            "Columns": [ "x_coordinate", "y_coordinate", "pupil_size", "timestamp"],
+            "x_coordinate": {
+                "Description": "Gaze position x-coordinate of the recorded eye, in the coordinate units specified in the corresponding metadata sidecar.",
+                "Units": "a.u."
+            },
+            "y_coordinate": {
+                "Description": "Gaze position y-coordinate of the recorded eye, in the coordinate units specified in the corresponding metadata sidecar.",
+                "Units": "a.u."
+            },
+            "pupil_size": {
+                "Description": "Pupil area of the recorded eye as calculated by the eye-tracker in arbitrary units (see EyeLink's documentation for conversion).",
+                 "Units": "a.u."
+             },
+             "timestamp": {
+                "Description": "Timestamp issued by the eye-tracker indexing the continuous recordings corresponding to the sampled eye."
+            },
+            "Manufacturer": "SR-Research",
+            "ManufacturersModelName": _extract_ManufacturersModelName(events),
+            "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
+            "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
+            "SoftwareVersion": metadata.get("SoftwareVersion"),
+            "EyeCameraSettings": metadata.get("EyeCameraSettings"),
+            "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
+            "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
+            "GazeMappingSettings": metadata.get("GazeMappingSettings"),
+            "RawDataFilters": metadata.get("RawDataFilters"),
+            "SampleCoordinateSystem": metadata.get("SampleCoordinateSystem"),
+            "SampleCoordinateUnits": metadata.get("SampleCoordinateUnits"),
+            "ScreenAOIDefinition": metadata.get("ScreenAOIDefinition"),
+            "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
+            "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
+            "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
+            "StartTime": _extract_StartTime(events),
+            "StopTime": _extract_StopTime(events),
+            "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
+            "CalibrationType": _extract_CalibrationType(df_ms_reduced),
+            "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
+            "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced)
+        }
+    
+    if _2eyesmode(df_ms_reduced) == True:
+        metadata_eye1 = {
+                "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
+                "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
+                "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[0])
+            }
+    
+        metadata_eye2 = {
+                "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[1::2]),
+                "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[1::2]),
+                "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[1])
+        }
+    else:
+        metadata_eye1 = {
+                "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
+                "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
+                "RecordedEye": (_extract_RecordedEye(df_ms_reduced))
+            }
+        
+    json_eye1 = base_json | metadata_eye1
+    if _2eyesmode(df_ms_reduced) == True:
+        json_eye2 = base_json | metadata_eye2
+
+    # to json
+    
+    output_filename_eye1 = generate_output_filename(
+                output_dir=output_dir, input_file=input_file, suffix="_recording-eye1_physio", extension="json"
+            )
+    with open(output_filename_eye1, "w") as outfile:
+            json.dump(json_eye1, outfile, indent=4)
+
+    e2b_log.info(f"file generated: {output_filename_eye1}")
+
+    if _2eyesmode(df_ms_reduced) == True:
+        output_filename_eye2 = generate_output_filename(
+                output_dir=output_dir, input_file=input_file, suffix="_recording-eye2_physio", extension="json"
+            )
+        with open(output_filename_eye2, "w") as outfile:
+            json.dump(json_eye2, outfile, indent=4)
+        
+        e2b_log.info(f"file generated: {output_filename_eye2}")
+
+    # physioevents.json Metadata
+
     events_json = {
+        "Columns": ["onset", "duration", "trial_type", "blink", "message"],
+        "Description": "Messages logged by the measurement device",
+        "ForeignIndexColumn": "timestamp",
+        "blink": {
+            "Description": "One indicates if the eye was closed, zero if open."
+        },
+        "message": {
+            "Description": "String messages logged by the eye-tracker."
+        },
+        "trial_type": {
+        "Description": "Event type as identified by the eye-tracker's model (either 'n/a' if not applicabble, 'fixation', or 'saccade')."
+        },
+        "TaskName": _extract_TaskName(events), 
         "InstitutionAddress": metadata.get("InstitutionAddress"),
         "InstitutionName": metadata.get("InstitutionName"),
         "StimulusPresentation": {
@@ -439,41 +461,68 @@ def edf2bids(
             "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
             "ScreenSize": metadata.get("ScreenSize"),
             "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
-        },
-        "TaskName": _extract_TaskName(events),
+        }
     }
 
-    output_filename = generate_output_filename(
-        output_dir=output_dir, input_file=input_file, suffix="_events", extension="json"
-    )
-    with open(output_filename, "w") as outfile:
+    
+    output_filename_eye1 = generate_output_filename(
+            output_dir=output_dir, input_file=input_file, suffix="_recording-eye1_physioevents", extension="json"
+        )
+    with open(output_filename_eye1, "w") as outfile:
         json.dump(events_json, outfile, indent=4)
-    e2b_log.info(f"file generated: {output_filename}")
 
-    # Samples to eyetrack.tsv
+    e2b_log.info(f"file generated: {output_filename_eye1}")
+
+    if _2eyesmode(df_ms_reduced) == True:
+
+        output_filename_eye2 = generate_output_filename(
+                output_dir=output_dir, input_file=input_file, suffix="_recording-eye2_physioevents", extension="json"
+            )
+        with open(output_filename_eye2, "w") as outfile:
+            json.dump(events_json, outfile, indent=4)
+        
+        e2b_log.info(f"file generated: {output_filename_eye2}")
+
+    # Samples to dataframe
+
     samples_asc_file = _convert_edf_to_asc_samples(input_file)
     if not samples_asc_file.exists():
         e2b_log.error(
             "The following .edf input file could not be converted to .asc:"
             f"{input_file}"
         )
-    eyetrack_tsv = _samples_to_data_frame(samples_asc_file)
-    # strip blankspcace and convert empty cells to nan
-    eyetrack_tsv = eyetrack_tsv.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    eyetrack_tsv = eyetrack_tsv.replace(".", np.nan, regex=False)
 
-    output_filename = generate_output_filename(
-        output_dir=output_dir,
-        input_file=input_file,
-        suffix="_eyetrack",
-        extension="tsv.gz",
-    )
+    samples = pd.read_csv(samples_asc_file, sep="\t", header=None)
+    samples_eye1 = pd.DataFrame(samples.iloc[:, [2, 1, 3, 0]]).map(lambda x: x.strip() if isinstance(x, str) else x).replace(".", np.nan, regex=False)
+    
+    if _2eyesmode(df_ms_reduced) == True:
+        samples_eye2 = pd.DataFrame(samples.iloc[:, [4, 5, 6, 0]])
 
-    content = eyetrack_tsv.to_csv(sep="\t", index=False, na_rep="n/a")
-    with gzip.open(output_filename, "wb") as f:
+    # Samples to eye_physio.tsv.gz
+
+    output_filename_eye1 = generate_output_filename(
+        output_dir=output_dir, input_file=input_file, suffix="_recording-eye1_physio", extension="tsv.gz"
+        )
+    content = samples_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+    with gzip.open(output_filename_eye1, "wb") as f:
         f.write(content.encode())
 
-    e2b_log.info(f"file generated: {output_filename}")
+    e2b_log.info(f"file generated: {output_filename_eye1}")
+
+    if _2eyesmode(df_ms_reduced) == True:
+
+        output_filename_eye2 = generate_output_filename(
+                output_dir=output_dir, input_file=input_file, suffix="_recording-eye2_physio", extension="tsv.gz"
+            )
+        content = samples_eye2.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+        with gzip.open(output_filename_eye2, "wb") as f:
+            f.write(content.encode())
+        
+        e2b_log.info(f"file generated: {output_filename_eye2}")
+
+
+    # Messages and events to physioevents.tsv.gz - tbc
+
 
 
 def generate_output_filename(
