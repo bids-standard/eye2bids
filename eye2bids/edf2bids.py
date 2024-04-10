@@ -353,7 +353,6 @@ def edf2bids(
             metadata = yaml.load(f, Loader=SafeLoader)
 
 
-
     # eye-physio.json Metadata
     base_json = {
             "Columns": [ "x_coordinate", "y_coordinate", "pupil_size", "timestamp"],
