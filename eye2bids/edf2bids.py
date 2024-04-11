@@ -412,12 +412,12 @@ def edf2bids(
         }
     else:
         metadata_eye1 = {
-                "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
-                "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
-                "RecordedEye": (_extract_RecordedEye(df_ms_reduced))
-            }
-        
-    json_eye1 = dict(base_json, **metadata_eye1) 
+            "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
+            "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
+            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)),
+        }
+
+    json_eye1 = dict(base_json, **metadata_eye1)
     if _2eyesmode(df_ms_reduced) == True:
         json_eye2 = dict(base_json, **metadata_eye2)
 
