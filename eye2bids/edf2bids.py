@@ -414,9 +414,9 @@ def edf2bids(
                 "RecordedEye": (_extract_RecordedEye(df_ms_reduced))
             }
         
-    json_eye1 = base_json | metadata_eye1
+    json_eye1 = dict(base_json, **metadata_eye1) 
     if _2eyesmode(df_ms_reduced) == True:
-        json_eye2 = base_json | metadata_eye2
+        json_eye2 = dict(base_json, **metadata_eye2)
 
     # to json
     
