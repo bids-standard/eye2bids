@@ -359,6 +359,9 @@ def edf2bids(
     # eye-physio.json Metadata
     base_json = {
         "Columns": ["x_coordinate", "y_coordinate", "pupil_size", "timestamp"],
+        "timestamp": {
+            "Description": "Timestamp issued by the eye-tracker indexing the continuous recordings corresponding to the sampled eye."
+        },
         "x_coordinate": {
             "Description": "Gaze position x-coordinate of the recorded eye, in the coordinate units specified in the corresponding metadata sidecar.",
             "Units": "a.u.",
@@ -370,9 +373,6 @@ def edf2bids(
         "pupil_size": {
             "Description": "Pupil area of the recorded eye as calculated by the eye-tracker in arbitrary units (see EyeLink's documentation for conversion).",
             "Units": "a.u.",
-        },
-        "timestamp": {
-            "Description": "Timestamp issued by the eye-tracker indexing the continuous recordings corresponding to the sampled eye."
         },
         "Manufacturer": "SR-Research",
         "ManufacturersModelName": _extract_ManufacturersModelName(events),
