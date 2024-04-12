@@ -503,13 +503,13 @@ def edf2bids(
 
     samples = pd.read_csv(samples_asc_file, sep="\t", header=None)
     samples_eye1 = (
-        pd.DataFrame(samples.iloc[:, [2, 1, 3, 0]])
+        pd.DataFrame(samples.iloc[:, 0:4])
         .map(lambda x: x.strip() if isinstance(x, str) else x)
         .replace(".", np.nan, regex=False)
     )
 
     if _2eyesmode(df_ms_reduced) == True:
-        samples_eye2 = pd.DataFrame(samples.iloc[:, [4, 5, 6, 0]])
+        samples_eye2 = pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
 
     # Samples to eye_physio.tsv.gz
 
