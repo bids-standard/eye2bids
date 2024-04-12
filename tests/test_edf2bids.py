@@ -86,7 +86,7 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     )
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
-    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header = None)
+    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
     count = sum(i == "." for i in df[0])
     assert count == 0
 
@@ -163,7 +163,7 @@ def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
     )
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
-    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header = None)
+    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
     number_columns = len(df.columns)
     assert number_columns == 4
 
@@ -187,7 +187,7 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
     )
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
-    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header = None)
+    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
     number_columns = len(df.columns)
     assert number_columns == 4
 
