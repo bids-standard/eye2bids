@@ -358,6 +358,7 @@ def edf2bids(
 
     # eye-physio.json Metadata
     base_json = {
+        "PhysioType": "eyetrack",
         "Columns": ["x_coordinate", "y_coordinate", "pupil_size", "timestamp"],
         "x_coordinate": {
             "Description": "Gaze position x-coordinate of the recorded eye, in the coordinate units specified in the corresponding metadata sidecar.",
@@ -378,7 +379,7 @@ def edf2bids(
         "ManufacturersModelName": _extract_ManufacturersModelName(events),
         "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
         "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
-        "SoftwareVersion": metadata.get("SoftwareVersion"),
+        "SoftwareVersions": metadata.get("SoftwareVersion"),
         "EyeCameraSettings": metadata.get("EyeCameraSettings"),
         "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
         "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
