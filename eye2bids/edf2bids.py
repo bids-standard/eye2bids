@@ -135,13 +135,11 @@ def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
 
 def _extract_CalibrationCount(df: pd.DataFrame) -> int:
     if _2eyesmode(df) == True:
-    if _2eyesmode(df) == True:
         return len(_calibrations(df)) // 2
     return len(_calibrations(df))
 
 
 def _get_calibration_positions(df: pd.DataFrame) -> list[int]:
-    if _2eyesmode(df) == True:
     if _2eyesmode(df) == True:
         return (
             np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
@@ -491,14 +489,15 @@ def edf2bids(
         output_dir=output_dir,
         input_file=input_file,
         suffix="_recording-eye1_physioevents",
-        extension="json",
+        extension="json"
+        )
     output_filename_eye1 = generate_output_filename(
         output_dir=output_dir,
         input_file=input_file,
         suffix="_recording-eye1_physioevents",
-        extension="json",
-    )
-    with open(output_filename_eye1, "w") as outfile:
+        extension="json"
+        )
+
     with open(output_filename_eye1, "w") as outfile:
         json.dump(events_json, outfile, indent=4)
 
@@ -562,8 +561,7 @@ def edf2bids(
         suffix="_recording-eye1_physio",
         extension="tsv.gz",
     )
-    content = samples_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-    with gzip.open(output_filename_eye1, "wb") as f:
+
     content = samples_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
     with gzip.open(output_filename_eye1, "wb") as f:
         f.write(content.encode())
