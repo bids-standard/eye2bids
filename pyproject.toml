@@ -15,14 +15,14 @@ classifiers = [
     "Operating System :: POSIX",
     "Operating System :: Unix",
     "Operating System :: MacOS",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11"
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
 ]
 dependencies = [
     "numpy",
-    "pandas",
+    "pandas>2.0",
     "pyaml",
     "rich_argparse",
     "rich"
@@ -32,7 +32,7 @@ dynamic = ["version"]
 license = {text = "MIT"}
 name = "eye2bids"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.optional-dependencies]
 # A combination of dependencies useful for developers

@@ -5,6 +5,7 @@ eye2bids/_version.py
 *eyetrack.json
 *eyetrack.tsv
 *.ipynb
+2eyes.ipynb
 tmp
 
 # General
