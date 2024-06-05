@@ -356,32 +356,44 @@ def _physioevents_eye1 (physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
     physioevents_eye1_list = ["MSG", "EFIXL", "ESACCL", "EBLINKL"]
     physioevents_eye1 = physioevents_reordered[physioevents_reordered['trial_type'].isin(physioevents_eye1_list)]
     physioevents_eye1 = physioevents_eye1.replace({"EFIXL": "fixation", "ESACCL": "saccade", "MSG": np.nan, None: np.nan})
+    
     physioevents_eye1['blink'] = 0
+    last_non_na_trial_type = None
 
-    for i in range(1, len(physioevents_eye1)):
-        if physioevents_eye1.iloc[i]['trial_type'] == 'saccade':
-            if physioevents_eye1.iloc[i-1]['trial_type'] == 'EBLINKL':
+    for i in range(len(physioevents_eye1)):
+        current_trial_type = physioevents_eye1.iloc[i]['trial_type']
+        if pd.notna(current_trial_type):  
+            if current_trial_type == 'saccade' and last_non_na_trial_type == 'EBLINKL':
                 physioevents_eye1.iloc[i, physioevents_eye1.columns.get_loc('blink')] = 1
+            last_non_na_trial_type = current_trial_type
 
     physioevents_eye1.loc[physioevents_eye1['trial_type'].isna(), 'blink'] = np.nan
     physioevents_eye1['blink'] = physioevents_eye1['blink'].astype('Int64')
     physioevents_eye1 = physioevents_eye1[physioevents_eye1.trial_type != 'EBLINKL']
+
+    physioevents_eye1 = physioevents_eye1[['timestamp', 'duration', 'trial_type','blink', 'message']]
     return physioevents_eye1
 
 def _physioevents_eye2 (physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
     physioevents_eye2_list = ["MSG", "EFIXR", "ESACCR", "EBLINKR"]
     physioevents_eye2 = physioevents_reordered[physioevents_reordered['trial_type'].isin(physioevents_eye2_list)]
     physioevents_eye2 = physioevents_eye2.replace({"EFIXR": "fixation", "ESACCR": "saccade", "MSG": np.nan, None: np.nan})
-    physioevents_eye2['blink'] = 0
 
-    for i in range(1, len(physioevents_eye2)):
-        if physioevents_eye2.iloc[i]['trial_type'] == 'saccade':
-            if physioevents_eye2.iloc[i-1]['trial_type'] == 'EBLINKR':
+    physioevents_eye2['blink'] = 0
+    last_non_na_trial_type = None
+
+    for i in range(len(physioevents_eye2)):
+        current_trial_type = physioevents_eye2.iloc[i]['trial_type']
+        if pd.notna(current_trial_type):  
+            if current_trial_type == 'saccade' and last_non_na_trial_type == 'EBLINKR':
                 physioevents_eye2.iloc[i, physioevents_eye2.columns.get_loc('blink')] = 1
+            last_non_na_trial_type = current_trial_type
 
     physioevents_eye2.loc[physioevents_eye2['trial_type'].isna(), 'blink'] = np.nan
     physioevents_eye2['blink'] = physioevents_eye2['blink'].astype('Int64')
     physioevents_eye2 = physioevents_eye2[physioevents_eye2.trial_type != 'EBLINKR']
+
+    physioevents_eye2 = physioevents_eye2[['timestamp', 'duration', 'trial_type','blink', 'message']]
     return physioevents_eye2
 
 
