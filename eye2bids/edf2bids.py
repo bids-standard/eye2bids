@@ -15,6 +15,7 @@ from yaml.loader import SafeLoader
 
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
+import re
 
 e2b_log = eye2bids_logger()
 
@@ -248,7 +249,6 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str:
         return "Right"
     elif eye == "LR":
         return ["Left", "Right"]
-        return ["Left", "Right"]
     return ""
 
 
@@ -322,6 +322,67 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     # reduced dataframe without MSG and sample columns
     df_ms = _load_asc_file_as_df(events_asc_file)
     return pd.DataFrame(df_ms.iloc[0:, 2:])
+
+def _df_events_after_start(events: list) -> pd.DataFrame:
+
+    start_index = next(i for i, line in enumerate(events) if re.match(r'START\s+.*', line))
+    end_index = next(i for i in range(len(events) - 1, -1, -1) if re.match(r'END\s+.*', events[i]))
+
+    if end_index > start_index:
+        data_lines = events[start_index + 1:end_index]
+        return pd.DataFrame([line.strip().split('\t') for line in data_lines])
+    else:
+        return print("No 'END' found after the selected 'START'.")
+
+def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:    
+    events_after_start['Event_Letters'] = events_after_start[0].str.extractall(r"([A-Za-z]+)").groupby(level=0).agg(''.join)
+    events_after_start['Event_Numbers'] = events_after_start[0].str.extract(r'(\d+)')
+    events_after_start[['msg_timestamp', 'message']] = events_after_start[1].str.split(n=1, expand=True)
+    events_after_start['message'] = events_after_start['message'].astype(str)
+    
+    msg_mask = events_after_start['Event_Letters'] == 'MSG'
+    events_after_start.loc[msg_mask, 'Event_Numbers'] = events_after_start.loc[msg_mask, 'msg_timestamp']
+    physioevents_reordered = (pd.concat([
+        events_after_start['Event_Numbers'], 
+        events_after_start[2], events_after_start['Event_Letters'], 
+        events_after_start['message']
+        ], axis=1, ignore_index=True)
+            .replace({None: np.nan, 'None': np.nan})
+            .rename(columns={0: 'timestamp',1: 'duration', 2: 'trial_type', 3: 'message'})
+    )
+    return physioevents_reordered
+
+def _physioevents_eye1 (physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
+    physioevents_eye1_list = ["MSG", "EFIXL", "ESACCL", "EBLINKL"]
+    physioevents_eye1 = physioevents_reordered[physioevents_reordered['trial_type'].isin(physioevents_eye1_list)]
+    physioevents_eye1 = physioevents_eye1.replace({"EFIXL": "fixation", "ESACCL": "saccade", "MSG": np.nan, None: np.nan})
+    physioevents_eye1['blink'] = 0
+
+    for i in range(1, len(physioevents_eye1)):
+        if physioevents_eye1.iloc[i]['trial_type'] == 'saccade':
+            if physioevents_eye1.iloc[i-1]['trial_type'] == 'EBLINKL':
+                physioevents_eye1.iloc[i, physioevents_eye1.columns.get_loc('blink')] = 1
+
+    physioevents_eye1.loc[physioevents_eye1['trial_type'].isna(), 'blink'] = np.nan
+    physioevents_eye1['blink'] = physioevents_eye1['blink'].astype('Int64')
+    physioevents_eye1 = physioevents_eye1[physioevents_eye1.trial_type != 'EBLINKL']
+    return physioevents_eye1
+
+def _physioevents_eye2 (physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
+    physioevents_eye2_list = ["MSG", "EFIXR", "ESACCR", "EBLINKR"]
+    physioevents_eye2 = physioevents_reordered[physioevents_reordered['trial_type'].isin(physioevents_eye2_list)]
+    physioevents_eye2 = physioevents_eye2.replace({"EFIXR": "fixation", "ESACCR": "saccade", "MSG": np.nan, None: np.nan})
+    physioevents_eye2['blink'] = 0
+
+    for i in range(1, len(physioevents_eye2)):
+        if physioevents_eye2.iloc[i]['trial_type'] == 'saccade':
+            if physioevents_eye2.iloc[i-1]['trial_type'] == 'EBLINKR':
+                physioevents_eye2.iloc[i, physioevents_eye2.columns.get_loc('blink')] = 1
+
+    physioevents_eye2.loc[physioevents_eye2['trial_type'].isna(), 'blink'] = np.nan
+    physioevents_eye2['blink'] = physioevents_eye2['blink'].astype('Int64')
+    physioevents_eye2 = physioevents_eye2[physioevents_eye2.trial_type != 'EBLINKR']
+    return physioevents_eye2
 
 
 def edf2bids(
@@ -447,25 +508,10 @@ def edf2bids(
             json.dump(json_eye2, outfile, indent=4)
 
         e2b_log.info(f"file generated: {output_filename_eye2}")
-        with open(output_filename_eye2, "w") as outfile:
-            json.dump(json_eye2, outfile, indent=4)
-
-        e2b_log.info(f"file generated: {output_filename_eye2}")
-
-    # physioevents.json Metadata
 
     # physioevents.json Metadata
 
     events_json = {
-        "Columns": ["onset", "duration", "trial_type", "blink", "message"],
-        "Description": "Messages logged by the measurement device",
-        "ForeignIndexColumn": "timestamp",
-        "blink": {"Description": "One indicates if the eye was closed, zero if open."},
-        "message": {"Description": "String messages logged by the eye-tracker."},
-        "trial_type": {
-            "Description": "Event type as identified by the eye-tracker's model (either 'n/a' if not applicabble, 'fixation', or 'saccade')."
-        },
-        "TaskName": _extract_TaskName(events),
         "Columns": ["onset", "duration", "trial_type", "blink", "message"],
         "Description": "Messages logged by the measurement device",
         "ForeignIndexColumn": "timestamp",
@@ -491,34 +537,10 @@ def edf2bids(
         suffix="_recording-eye1_physioevents",
         extension="json"
         )
-    output_filename_eye1 = generate_output_filename(
-        output_dir=output_dir,
-        input_file=input_file,
-        suffix="_recording-eye1_physioevents",
-        extension="json"
-        )
-
     with open(output_filename_eye1, "w") as outfile:
         json.dump(events_json, outfile, indent=4)
 
     e2b_log.info(f"file generated: {output_filename_eye1}")
-
-    e2b_log.info(f"file generated: {output_filename_eye1}")
-
-    if _2eyesmode(df_ms_reduced) == True:
-
-        output_filename_eye2 = generate_output_filename(
-            output_dir=output_dir,
-            input_file=input_file,
-            suffix="_recording-eye2_physioevents",
-            extension="json",
-        )
-        with open(output_filename_eye2, "w") as outfile:
-            json.dump(events_json, outfile, indent=4)
-
-        e2b_log.info(f"file generated: {output_filename_eye2}")
-
-    # Samples to dataframe
 
     if _2eyesmode(df_ms_reduced) == True:
 
@@ -558,10 +580,8 @@ def edf2bids(
         output_dir=output_dir,
         input_file=input_file,
         suffix="_recording-eye1_physio",
-        suffix="_recording-eye1_physio",
         extension="tsv.gz",
     )
-
     content = samples_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
     with gzip.open(output_filename_eye1, "wb") as f:
         f.write(content.encode())
@@ -582,25 +602,55 @@ def edf2bids(
 
         e2b_log.info(f"file generated: {output_filename_eye2}")
 
-    # Messages and events to physioevents.tsv.gz - tbc
-    e2b_log.info(f"file generated: {output_filename_eye1}")
+    # Messages and events to dataframes
 
-    if _2eyesmode(df_ms_reduced) == True:
+    events_after_start = _df_events_after_start(events)
+    physioevents_reordered = _df_physioevents(events_after_start)
+    physioevents_eye1 = _physioevents_eye1(physioevents_reordered)
+    physioevents_eye2 = _physioevents_eye2(physioevents_reordered)
 
-        output_filename_eye2 = generate_output_filename(
+    # Messages and events to physioevents.tsv.gz
+
+    if _2eyesmode(df_ms_reduced) == False:
+        output_eventsfilename_eye1 = generate_output_filename(
             output_dir=output_dir,
             input_file=input_file,
-            suffix="_recording-eye2_physio",
+            suffix="_recording-eye1_physioevents",
             extension="tsv.gz",
         )
-        content = samples_eye2.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-        with gzip.open(output_filename_eye2, "wb") as f:
+        if _extract_RecordedEye(df_ms_reduced) == 'Left':
+            content = physioevents_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+        elif _extract_RecordedEye(df_ms_reduced) == 'Right':
+            content = physioevents_eye2.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+        with gzip.open(output_eventsfilename_eye1, "wb") as f:
             f.write(content.encode())
 
-        e2b_log.info(f"file generated: {output_filename_eye2}")
+        e2b_log.info(f"file generated: {output_eventsfilename_eye1}")
+    
+    else:
+        output_eventsfilename_eye1 = generate_output_filename(
+            output_dir=output_dir,
+            input_file=input_file,
+            suffix="_recording-eye1_physioevents",
+            extension="tsv.gz",
+        )
+        content = physioevents_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+        with gzip.open(output_eventsfilename_eye1, "wb") as f:
+            f.write(content.encode())
 
-    # Messages and events to physioevents.tsv.gz - tbc
+        e2b_log.info(f"file generated: {output_eventsfilename_eye1}")
 
+        output_eventsfilename_eye2 = generate_output_filename(
+            output_dir=output_dir,
+            input_file=input_file,
+            suffix="_recording-eye2_physioevents",
+            extension="tsv.gz",
+        )
+        content = physioevents_eye2.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+        with gzip.open(output_eventsfilename_eye2, "wb") as f:
+            f.write(content.encode())
+
+        e2b_log.info(f"file generated: {output_eventsfilename_eye2}")
 
 def generate_output_filename(
     output_dir: Path, input_file: Path, suffix: str, extension: str
