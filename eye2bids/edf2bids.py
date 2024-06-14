@@ -390,12 +390,12 @@ def _physioevents_eye1(physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
                 physioevents_eye1.iloc[i, physioevents_eye1.columns.get_loc("blink")] = 1
             last_non_na_trial_type = current_trial_type
 
-    physioevents_eye1.loc[physioevents_eye1['trial_type'].isna(), 'blink'] = np.nan
-    physioevents_eye1['blink'] = physioevents_eye1['blink'].astype('Int64')
-    physioevents_eye1 = physioevents_eye1[physioevents_eye1.trial_type != 'EBLINKL']
+    physioevents_eye1.loc[physioevents_eye1["trial_type"].isna(), "blink"] = np.nan
+    physioevents_eye1["blink"] = physioevents_eye1["blink"].astype("Int64")
+    physioevents_eye1 = physioevents_eye1[physioevents_eye1.trial_type != "EBLINKL"]
 
-    physioevents_eye1['timestamp']= physioevents_eye1['timestamp'].astype('Int64')
-    physioevents_eye1['duration']= physioevents_eye1['duration'].astype('Int64')
+    physioevents_eye1["timestamp"] = physioevents_eye1["timestamp"].astype("Int64")
+    physioevents_eye1["duration"] = physioevents_eye1["duration"].astype("Int64")
 
     physioevents_eye1 = physioevents_eye1[
         ["timestamp", "duration", "trial_type", "blink", "message"]
@@ -422,12 +422,12 @@ def _physioevents_eye2(physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
                 physioevents_eye2.iloc[i, physioevents_eye2.columns.get_loc("blink")] = 1
             last_non_na_trial_type = current_trial_type
 
-    physioevents_eye2.loc[physioevents_eye2['trial_type'].isna(), 'blink'] = np.nan
-    physioevents_eye2['blink'] = physioevents_eye2['blink'].astype('Int64')
-    physioevents_eye2 = physioevents_eye2[physioevents_eye2.trial_type != 'EBLINKR']
+    physioevents_eye2.loc[physioevents_eye2["trial_type"].isna(), "blink"] = np.nan
+    physioevents_eye2["blink"] = physioevents_eye2["blink"].astype("Int64")
+    physioevents_eye2 = physioevents_eye2[physioevents_eye2.trial_type != "EBLINKR"]
 
-    physioevents_eye2['timestamp']= physioevents_eye2['timestamp'].astype('Int64')
-    physioevents_eye2['duration']= physioevents_eye2['duration'].astype('Int64')
+    physioevents_eye2["timestamp"] = physioevents_eye2["timestamp"].astype("Int64")
+    physioevents_eye2["duration"] = physioevents_eye2["duration"].astype("Int64")
 
     physioevents_eye2 = physioevents_eye2[
         ["timestamp", "duration", "trial_type", "blink", "message"]

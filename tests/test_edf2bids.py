@@ -657,7 +657,7 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
         ("rest", [9199380, pd.NA, np.nan, pd.NA, "RECORD_START"]),
         ("satf", [3209032, pd.NA, np.nan, pd.NA, "Calibration ended"]),
         ("vergence", [819655, pd.NA, np.nan, pd.NA, "!MODE RECORD CR 1000 2 1 LR"]),
-        ("2eyes",[767985, 169, "fixation", 0, np.nan])
+        ("2eyes", [767985, 169, "fixation", 0, np.nan]),
     ],
 )
 def test_physioevents_value(folder, expected, eyelink_test_data_dir):
