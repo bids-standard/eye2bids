@@ -633,12 +633,12 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", [2116084, np.nan, np.nan, np.nan, "!MODE RECORD CR 1000 2 1 R"]),
-        ("lt", [3852521, np.nan, np.nan, np.nan, "EYE_USED 0 LEFT"]),
-        ("pitracker", [248610, np.nan, np.nan, np.nan, "!MODE RECORD CR 1000 2 1 R"]),
-        ("rest", [9199380, np.nan, np.nan, np.nan, "RECORD_START"]),
-        ("satf", [3098683, 20, "saccade", 1, np.nan]),
-        ("vergence", [819655, np.nan, np.nan, np.nan, "!MODE RECORD CR 1000 2 1 LR"]),
+        ("emg", [2116084, pd.NA, np.nan, pd.NA, "!MODE RECORD CR 1000 2 1 R"]),
+        ("lt", [3852521, np.nan, np.nan, pd.NA, "EYE_USED 0 LEFT"]),
+        ("pitracker", [248610, pd.NA, np.nan, pd.NA, "!MODE RECORD CR 1000 2 1 R"]),
+        ("rest", [9199380, pd.NA, np.nan, pd.NA, "RECORD_START"]),
+        ("satf", [3209032, pd.NA, np.nan, pd.NA, "Calibration ended"]),
+        ("vergence", [819655, pd.NA, np.nan, pd.NA, "!MODE RECORD CR 1000 2 1 LR"]),
         ("2eyes",[767985, 169, "fixation", 0, np.nan])
     ],
 )
