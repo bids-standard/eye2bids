@@ -371,6 +371,9 @@ def _physioevents_eye1 (physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
     physioevents_eye1['blink'] = physioevents_eye1['blink'].astype('Int64')
     physioevents_eye1 = physioevents_eye1[physioevents_eye1.trial_type != 'EBLINKL']
 
+    physioevents_eye1['timestamp']= physioevents_eye1['timestamp'].astype('Int64')
+    physioevents_eye1['duration']= physioevents_eye1['duration'].astype('Int64')
+
     physioevents_eye1 = physioevents_eye1[['timestamp', 'duration', 'trial_type','blink', 'message']]
     return physioevents_eye1
 

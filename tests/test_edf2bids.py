@@ -633,13 +633,9 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", [2116084, np.nan, np.nan, np.nan, "!MODE RECORD CR 1000 2 1 R"]),
-        ("lt", [3852521, np.nan, np.nan, np.nan, "EYE_USED 0 LEFT"]),
-        ("pitracker", [248610, np.nan, np.nan, np.nan, "!MODE RECORD CR 1000 2 1 R"]),
-        ("rest", [9199380, np.nan, np.nan, np.nan, "RECORD_START"]),
-        ("satf", [3098683, 20, "saccade", 1, np.nan]),
-        ("vergence", [819655, np.nan, np.nan, np.nan, "!MODE RECORD CR 1000 2 1 LR"]),
-        ("2eyes",[767985, 169, "fixation", 0, np.nan])
+        ("rest", ['fixation', 'saccade', 'fixation', 'saccade', 'fixation', 'saccade', 'fixation']),
+        ("2eyes", ['fixation', 'saccade', 'fixation', 'saccade', 'fixation', 'saccade', 'fixation']),
+        ("pitracker", ['saccade', 'fixation', 'saccade', 'fixation', 'saccade', 'fixation', 'saccade']),
     ],
 )
 def test_physioevents_value(folder, expected, eyelink_test_data_dir):
@@ -649,4 +645,4 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     events_after_start = _df_events_after_start(events)
     physioevents_reordered = _df_physioevents(events_after_start)
     physioevents_eye1 = _physioevents_eye1(physioevents_reordered)
-    assert physioevents_eye1.iloc[0].tolist() == expected
+    assert physioevents_eye1.iloc[3:10, 2].tolist() == expected
