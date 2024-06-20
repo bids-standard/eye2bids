@@ -283,7 +283,6 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
         ("pitracker", []),
         (
             "rest",
-            [
                 [
                     [960, 540],
                     [960, 732],
@@ -298,14 +297,12 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                     [1126, 636],
                     [794, 444],
                     [960, 348],
-                ]
-            ],
+                ],
         ),
         ("satf", []),
         ("vergence", []),
         (
             "2eyes",
-            [
                 [
                     [960, 540],
                     [960, 732],
@@ -320,8 +317,7 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                     [1126, 636],
                     [794, 444],
                     [960, 348],
-                ]
-            ],
+                ],
         ),
     ],
 )

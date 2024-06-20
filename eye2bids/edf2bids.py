@@ -139,37 +139,34 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
     return len(_calibrations(df))
 
 
-def _get_calibration_positions(df: pd.DataFrame) -> list[int]:
-    if _2eyesmode(df) == True:
-        return (
-            np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
-            .astype(int)
-            .tolist()
-        )[::2]
-    return (
-        np.array(df[df[2] == "VALIDATE"][8].str.split(",", expand=True))
-        .astype(int)
-        .tolist()
-    )
-
-
 def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int]]:
-    cal_pos = _get_calibration_positions(df)
-    cal_num = len(cal_pos) // _extract_CalibrationCount(df)
-
-    CalibrationPosition: list[list[int]] = []
-
-    if len(cal_pos) == 0:
+    
+    if _has_validation == False:
+        CalibrationPosition = []
         return CalibrationPosition
+    
+    else:
+        cal_df = df[df[2] == "VALIDATE"]#.drop(columns=[2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]).reset_index(drop=True)
+        cal_df[5] = pd.to_numeric(cal_df[5], errors='coerce')
+        df_sorted = cal_df.sort_values(by=5)
 
-    CalibrationPosition.extend(
-        cal_pos[i : i + cal_num] for i in range(0, len(cal_pos), cal_num)
-    )
-    return CalibrationPosition
+        if _2eyesmode(df) == True:
+            df_sorted = df_sorted.drop(index=df_sorted.index[::(_extract_CalibrationCount(df) * 2)]) 
+
+        if _extract_CalibrationCount(df) == 1:
+            CalibrationPosition = np.array((df_sorted[8]).str.split(",", expand=True)).astype(int).tolist()
+            return CalibrationPosition
+        else: 
+            CalibrationPosition = []
+
+            for x in df_sorted:
+                cal_values = np.array((df_sorted[8][::_extract_CalibrationCount(df)]).str.split(",", expand=True)).astype(int).tolist()
+                CalibrationPosition.append(cal_values)
+            return CalibrationPosition
 
 
 def _extract_CalibrationUnit(df: pd.DataFrame) -> str:
-    if len(_get_calibration_positions(df)) == 0:
+    if len(_extract_CalibrationPosition(df)) == 0:
         return ""
 
     cal_unit = (
