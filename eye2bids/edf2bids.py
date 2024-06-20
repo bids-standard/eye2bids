@@ -140,27 +140,41 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
 
 
 def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int]]:
-    
+
     if _has_validation == False:
         CalibrationPosition = []
         return CalibrationPosition
-    
+
     else:
-        cal_df = df[df[2] == "VALIDATE"]#.drop(columns=[2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]).reset_index(drop=True)
-        cal_df[5] = pd.to_numeric(cal_df[5], errors='coerce')
+        cal_df = df[
+            df[2] == "VALIDATE"
+        ]  # .drop(columns=[2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]).reset_index(drop=True)
+        cal_df[5] = pd.to_numeric(cal_df[5], errors="coerce")
         df_sorted = cal_df.sort_values(by=5)
 
         if _2eyesmode(df) == True:
-            df_sorted = df_sorted.drop(index=df_sorted.index[::(_extract_CalibrationCount(df) * 2)]) 
+            df_sorted = df_sorted.drop(
+                index=df_sorted.index[:: (_extract_CalibrationCount(df) * 2)]
+            )
 
         if _extract_CalibrationCount(df) == 1:
-            CalibrationPosition = np.array((df_sorted[8]).str.split(",", expand=True)).astype(int).tolist()
+            CalibrationPosition = (
+                np.array((df_sorted[8]).str.split(",", expand=True)).astype(int).tolist()
+            )
             return CalibrationPosition
-        else: 
+        else:
             CalibrationPosition = []
 
             for x in df_sorted:
-                cal_values = np.array((df_sorted[8][::_extract_CalibrationCount(df)]).str.split(",", expand=True)).astype(int).tolist()
+                cal_values = (
+                    np.array(
+                        (df_sorted[8][:: _extract_CalibrationCount(df)]).str.split(
+                            ",", expand=True
+                        )
+                    )
+                    .astype(int)
+                    .tolist()
+                )
                 CalibrationPosition.append(cal_values)
             return CalibrationPosition
 
