@@ -1,5 +1,7 @@
 """Base classes for sidecar and events."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any
