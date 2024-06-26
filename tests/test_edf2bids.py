@@ -147,7 +147,8 @@ def test_2files_eye2(eyelink_test_data_dir):
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
-    """Check that values for only one eye were extracted in eye1-physio.tsv.gz by number of columns.
+    """Check that values for only one eye were extracted \
+       in eye1-physio.tsv.gz by number of columns.
 
     function _samples_to_data_frame
     """
