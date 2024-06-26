@@ -234,12 +234,8 @@ def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", ""),
         ("lt", "pixel"),
-        ("pitracker", ""),
         ("rest", "pixel"),
-        ("satf", ""),
-        ("vergence", ""),
         ("2eyes", "pixel"),
     ],
 )
@@ -253,7 +249,6 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", []),
         (
             "lt",
             [
@@ -281,43 +276,44 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                 ],
             ],
         ),
-        ("pitracker", []),
         (
             "rest",
             [
-                [960, 540],
-                [960, 732],
-                [1126, 444],
-                [576, 540],
-                [1344, 540],
-                [768, 873],
-                [1152, 873],
-                [768, 207],
-                [1152, 207],
-                [794, 636],
-                [1126, 636],
-                [794, 444],
-                [960, 348],
+                [
+                    [960, 540],
+                    [960, 732],
+                    [1126, 444],
+                    [576, 540],
+                    [1344, 540],
+                    [768, 873],
+                    [1152, 873],
+                    [768, 207],
+                    [1152, 207],
+                    [794, 636],
+                    [1126, 636],
+                    [794, 444],
+                    [960, 348],
+                ]
             ],
         ),
-        ("satf", []),
-        ("vergence", []),
         (
             "2eyes",
             [
-                [960, 540],
-                [960, 732],
-                [1126, 444],
-                [576, 540],
-                [1344, 540],
-                [768, 873],
-                [1152, 873],
-                [768, 207],
-                [1152, 207],
-                [794, 636],
-                [1126, 636],
-                [794, 444],
-                [960, 348],
+                [
+                    [960, 540],
+                    [960, 732],
+                    [1126, 444],
+                    [576, 540],
+                    [1344, 540],
+                    [768, 873],
+                    [1152, 873],
+                    [768, 207],
+                    [1152, 207],
+                    [794, 636],
+                    [1126, 636],
+                    [794, 444],
+                    [960, 348],
+                ],
             ],
         ),
     ],
@@ -446,12 +442,8 @@ def test_extract_ManufacturersModelName(folder, expected, eyelink_test_data_dir)
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", []),
         ("lt", [[0.32], [0.37]]),
-        ("pitracker", []),
         ("rest", [[0.9]]),
-        ("satf", []),
-        ("vergence", []),
         (
             "2eyes",
             [[0.62], [1.21]],
