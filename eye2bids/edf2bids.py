@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import gzip
-import json
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -14,7 +13,7 @@ import yaml
 from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
-from eye2bids._base import BaseSideCar
+from eye2bids._base import BasePhysioEventsJson, BasePhysioJson
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
 
@@ -349,7 +348,7 @@ def edf2bids(
 
     # %% Sidecar eye-physio.json
 
-    base_json = BaseSideCar(manufacturer="SR-Research", metadata=metadata)
+    base_json = BasePhysioJson(manufacturer="SR-Research", metadata=metadata)
 
     base_json["ManufacturersModelName"] = _extract_ManufacturersModelName(events)
     base_json["DeviceSerialNumber"] = _extract_DeviceSerialNumber(events)
@@ -414,52 +413,20 @@ def edf2bids(
 
     # %% physioevents.json Metadata
 
-    events_json = {
-        "Columns": ["onset", "duration", "trial_type", "blink", "message"],
-        "Description": "Messages logged by the measurement device",
-        "ForeignIndexColumn": "timestamp",
-        "blink": {"Description": "One indicates if the eye was closed, zero if open."},
-        "message": {"Description": "String messages logged by the eye-tracker."},
-        "trial_type": {
-            "Description": (
-                "Event type as identified by the eye-tracker's model "
-                "((either 'n/a' if not applicabble, 'fixation', or 'saccade')."
-            )
-        },
-        "TaskName": _extract_TaskName(events),
-        "InstitutionAddress": metadata.get("InstitutionAddress"),
-        "InstitutionName": metadata.get("InstitutionName"),
-        "StimulusPresentation": {
-            "ScreenDistance": metadata.get("ScreenDistance"),
-            "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
-            "ScreenSize": metadata.get("ScreenSize"),
-            "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
-        },
-    }
+    events_json = BasePhysioEventsJson(metadata)
 
-    output_filename_eye1 = generate_output_filename(
-        output_dir=output_dir,
-        input_file=input_file,
-        suffix="_recording-eye1_physioevents",
-        extension="json",
+    events_json["TaskName"] = _extract_TaskName(events)
+    events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
+        df_ms_reduced
     )
-    with open(output_filename_eye1, "w") as outfile:
-        json.dump(events_json, outfile, indent=4)
 
-    e2b_log.info(f"file generated: {output_filename_eye1}")
-
-    if _2eyesmode(df_ms_reduced):
-
-        output_filename_eye2 = generate_output_filename(
-            output_dir=output_dir,
-            input_file=input_file,
-            suffix="_recording-eye2_physioevents",
-            extension="json",
+    events_json.write(
+        output_dir=output_dir, recording="eye1", extra_metadata=metadata_eye1
+    )
+    if base_json.two_eyes:
+        events_json.write(
+            output_dir=output_dir, recording="eye2", extra_metadata=metadata_eye2
         )
-        with open(output_filename_eye2, "w") as outfile:
-            json.dump(events_json, outfile, indent=4)
-
-        e2b_log.info(f"file generated: {output_filename_eye2}")
 
     # Samples to dataframe
 
