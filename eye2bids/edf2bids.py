@@ -6,11 +6,11 @@ import gzip
 import json
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import yaml
-from rich import print
 from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
@@ -135,29 +135,30 @@ def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
 
 
 def _extract_CalibrationCount(df: pd.DataFrame) -> int:
-    if _2eyesmode(df) == True:
+    if _2eyesmode(df):
         return len(_calibrations(df)) // 2
     return len(_calibrations(df))
 
 
-def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int] | list[list[int]]]:
+def _extract_CalibrationPosition(
+    df: pd.DataFrame,
+) -> list[Any] | list[list[int] | list[list[int]]]:
 
-    if _has_validation(df) == False:
-        CalibrationPosition = []
-        return CalibrationPosition
+    if not _has_validation(df):
+        return []
 
     calibration_df = df[df[2] == "VALIDATE"]
     calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
 
-    if _2eyesmode(df) == True:
+    if _2eyesmode(df):
         # drop duplicated calibration position
         # because they will be the same for both eyes
         calibration_df = calibration_df[calibration_df[6] == "LEFT"]
 
     nb_calibration_postions = calibration_df[5].max() + 1
 
-    # initiliaze
-    CalibrationPosition = [[[]] * nb_calibration_postions]
+    # initialize
+    CalibrationPosition: Any = [[[]] * nb_calibration_postions]
 
     for i_pos in range(nb_calibration_postions):
 
@@ -167,7 +168,7 @@ def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int] | list[list
             values = calibration[1][8].split(",")
 
             if len(CalibrationPosition) < i + 1:
-                CalibrationPosition.append([()] * nb_calibration_postions)
+                CalibrationPosition.append([[]] * nb_calibration_postions)
 
             CalibrationPosition[i][i_pos] = [int(x) for x in values]
 
@@ -248,7 +249,7 @@ def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
     return int(df[df[2] == "RECCFG"].iloc[0:1, 2:3].to_string(header=False, index=False))
 
 
-def _extract_RecordedEye(df: pd.DataFrame) -> str:
+def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
     eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
     if eye == "L":
         return "Left"
@@ -368,18 +369,34 @@ def edf2bids(
     base_json = {
         "Columns": ["x_coordinate", "y_coordinate", "pupil_size", "timestamp"],
         "timestamp": {
-            "Description": "Timestamp issued by the eye-tracker indexing the continuous recordings corresponding to the sampled eye."
+            "Description": (
+                "Timestamp issued by the eye-tracker "
+                "indexing the continuous recordings "
+                "corresponding to the sampled eye."
+            )
         },
         "x_coordinate": {
-            "Description": "Gaze position x-coordinate of the recorded eye, in the coordinate units specified in the corresponding metadata sidecar.",
+            "Description": (
+                "Gaze position x-coordinate of the recorded eye, "
+                "in the coordinate units specified "
+                "in the corresponding metadata sidecar."
+            ),
             "Units": "a.u.",
         },
         "y_coordinate": {
-            "Description": "Gaze position y-coordinate of the recorded eye, in the coordinate units specified in the corresponding metadata sidecar.",
+            "Description": (
+                "Gaze position y-coordinate of the recorded eye, "
+                "in the coordinate units specified "
+                "in the corresponding metadata sidecar."
+            ),
             "Units": "a.u.",
         },
         "pupil_size": {
-            "Description": "Pupil area of the recorded eye as calculated by the eye-tracker in arbitrary units (see EyeLink's documentation for conversion).",
+            "Description": (
+                "Pupil area of the recorded eye as calculated "
+                "by the eye-tracker in arbitrary units "
+                "(see EyeLink's documentation for conversion)."
+            ),
             "Units": "a.u.",
         },
         "Manufacturer": "SR-Research",
@@ -406,7 +423,7 @@ def edf2bids(
         "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
     }
 
-    if _2eyesmode(df_ms_reduced) == True:
+    if _2eyesmode(df_ms_reduced):
         metadata_eye1 = {
             "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
             "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
@@ -426,7 +443,7 @@ def edf2bids(
         }
 
     json_eye1 = dict(base_json, **metadata_eye1)
-    if _2eyesmode(df_ms_reduced) == True:
+    if _2eyesmode(df_ms_reduced):
         json_eye2 = dict(base_json, **metadata_eye2)
 
     # to json
@@ -442,7 +459,7 @@ def edf2bids(
 
     e2b_log.info(f"file generated: {output_filename_eye1}")
 
-    if _2eyesmode(df_ms_reduced) == True:
+    if _2eyesmode(df_ms_reduced):
         output_filename_eye2 = generate_output_filename(
             output_dir=output_dir,
             input_file=input_file,
@@ -463,7 +480,10 @@ def edf2bids(
         "blink": {"Description": "One indicates if the eye was closed, zero if open."},
         "message": {"Description": "String messages logged by the eye-tracker."},
         "trial_type": {
-            "Description": "Event type as identified by the eye-tracker's model (either 'n/a' if not applicabble, 'fixation', or 'saccade')."
+            "Description": (
+                "Event type as identified by the eye-tracker's model "
+                "((either 'n/a' if not applicabble, 'fixation', or 'saccade')."
+            )
         },
         "TaskName": _extract_TaskName(events),
         "InstitutionAddress": metadata.get("InstitutionAddress"),
@@ -487,7 +507,7 @@ def edf2bids(
 
     e2b_log.info(f"file generated: {output_filename_eye1}")
 
-    if _2eyesmode(df_ms_reduced) == True:
+    if _2eyesmode(df_ms_reduced):
 
         output_filename_eye2 = generate_output_filename(
             output_dir=output_dir,
@@ -516,7 +536,7 @@ def edf2bids(
         .replace(".", np.nan, regex=False)
     )
 
-    if _2eyesmode(df_ms_reduced) == True:
+    if _2eyesmode(df_ms_reduced):
         samples_eye2 = pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
 
     # Samples to eye_physio.tsv.gz
@@ -533,7 +553,7 @@ def edf2bids(
 
     e2b_log.info(f"file generated: {output_filename_eye1}")
 
-    if _2eyesmode(df_ms_reduced) == True:
+    if _2eyesmode(df_ms_reduced):
 
         output_filename_eye2 = generate_output_filename(
             output_dir=output_dir,
