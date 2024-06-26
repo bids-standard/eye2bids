@@ -89,5 +89,6 @@ class BaseSideCar(dict[str, Any]):
             for key, value in extra_metadata.items():
                 self[key] = value
 
+        content = {key: value for key, value in self.items() if self[key] is not None}
         with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
-            json.dump(self, outfile, indent=4)
+            json.dump(content, outfile, indent=4)
