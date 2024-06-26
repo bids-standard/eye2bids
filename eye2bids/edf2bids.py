@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import gzip
-import json
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -14,6 +13,7 @@ import yaml
 from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
+from eye2bids._base import BasePhysioEventsJson, BasePhysioJson
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
 
@@ -74,7 +74,7 @@ def _check_inputs(
 def _check_output_dir(output_dir: str | Path | None = None) -> Path:
     """Check if output directory is valid."""
     if output_dir is None:
-        output_dir = input("Enter the output directory: ")
+        output_dir = Path()
     if isinstance(output_dir, str):
         checked_output_dir = Path(output_dir)
     elif isinstance(output_dir, Path):
@@ -119,10 +119,7 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
 
 def _2eyesmode(df: pd.DataFrame) -> bool:
     eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
-    if eye == "LR":
-        two_eyes = True
-    else:
-        two_eyes = False
+    two_eyes = eye == "LR"
     return two_eyes
 
 
@@ -134,18 +131,11 @@ def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
     return _calibrations(df).iloc[0:1, 2:3].to_string(header=False, index=False)
 
 
-def _extract_CalibrationCount(df: pd.DataFrame) -> int:
-    if _2eyesmode(df):
-        return len(_calibrations(df)) // 2
-    return len(_calibrations(df))
+def _extract_CalibrationCount(df: pd.DataFrame, two_eyes: bool) -> int:
+    return len(_calibrations(df)) // 2 if two_eyes else len(_calibrations(df))
 
 
-def _extract_CalibrationPosition(
-    df: pd.DataFrame,
-) -> list[Any] | list[list[int] | list[list[int]]]:
-
-    if not _has_validation(df):
-        return []
+def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[list[int]]]:
 
     calibration_df = df[df[2] == "VALIDATE"]
     calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
@@ -172,15 +162,10 @@ def _extract_CalibrationPosition(
 
             CalibrationPosition[i][i_pos] = [int(x) for x in values]
 
-    if _extract_CalibrationCount(df) == 1:
-        return CalibrationPosition[0]
     return CalibrationPosition
 
 
 def _extract_CalibrationUnit(df: pd.DataFrame) -> str:
-    if len(_extract_CalibrationPosition(df)) == 0:
-        return ""
-
     cal_unit = (
         (df[df[2] == "VALIDATE"][[13]])
         .iloc[0:1, 0:1]
@@ -214,14 +199,10 @@ def _has_validation(df: pd.DataFrame) -> bool:
 
 
 def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
-    if not _has_validation(df):
-        return []
     return np.array(_validations(df)[[11]]).astype(float).tolist()
 
 
 def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
-    if not _has_validation(df):
-        return []
     return np.array(_validations(df)[[9]]).astype(float).tolist()
 
 
@@ -332,6 +313,85 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
+def generate_physio_json(
+    input_file: Path,
+    metadata_file: str | Path | None,
+    output_dir: Path,
+    events_asc_file: Path,
+) -> None:
+    """Generate the _physio.json."""
+    if metadata_file is None:
+        metadata = {}
+    else:
+        with open(metadata_file) as f:
+            metadata = yaml.load(f, Loader=SafeLoader)
+
+    events = _load_asc_file(events_asc_file)
+    df_ms = _load_asc_file_as_df(events_asc_file)
+    df_ms_reduced = _load_asc_file_as_reduced_df(events_asc_file)
+
+    base_json = BasePhysioJson(manufacturer="SR-Research", metadata=metadata)
+
+    base_json.input_file = input_file
+    base_json.has_validation = _has_validation(df_ms_reduced)
+    base_json.two_eyes = _2eyesmode(df_ms_reduced)
+
+    base_json["ManufacturersModelName"] = _extract_ManufacturersModelName(events)
+    base_json["DeviceSerialNumber"] = _extract_DeviceSerialNumber(events)
+    base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
+    base_json["PupilFitMethod"] = _extract_PupilFitMethod(df_ms_reduced)
+    base_json["SamplingFrequency"] = _extract_SamplingFrequency(df_ms_reduced)
+
+    base_json["StartTime"] = _extract_StartTime(events)
+    base_json["StopTime"] = _extract_StopTime(events)
+
+    if base_json.two_eyes:
+        metadata_eye1: dict[str, str | list[str] | list[float]] = {
+            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[0]),
+        }
+        metadata_eye2: dict[str, str | list[str] | list[float]] = {
+            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[1]),
+        }
+    else:
+        metadata_eye1 = {
+            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)),
+        }
+
+    if base_json.has_validation:
+
+        if CalibrationPosition := _extract_CalibrationPosition(df_ms_reduced):
+            base_json["CalibrationCount"] = _extract_CalibrationCount(
+                df_ms_reduced, two_eyes=base_json.two_eyes
+            )
+            base_json["CalibrationUnit"] = _extract_CalibrationUnit(df_ms_reduced)
+            base_json["CalibrationType"] = _extract_CalibrationType(df_ms_reduced)
+
+            base_json["CalibrationPosition"] = CalibrationPosition
+            if base_json["CalibrationCount"] == 1:
+                base_json["CalibrationPosition"] = CalibrationPosition[0]
+
+        metadata_eye1["AverageCalibrationError"] = _extract_AverageCalibrationError(
+            df_ms
+        )[::2]
+        metadata_eye1["MaximalCalibrationError"] = _extract_MaximalCalibrationError(
+            df_ms
+        )[::2]
+
+        if base_json.two_eyes:
+            metadata_eye2["AverageCalibrationError"] = _extract_AverageCalibrationError(
+                df_ms
+            )[1::2]
+            metadata_eye2["MaximalCalibrationError"] = _extract_MaximalCalibrationError(
+                df_ms
+            )[1::2]
+
+    base_json.write(output_dir=output_dir, recording="eye1", extra_metadata=metadata_eye1)
+    if base_json.two_eyes:
+        base_json.write(
+            output_dir=output_dir, recording="eye2", extra_metadata=metadata_eye2
+        )
+
+
 def edf2bids(
     input_file: str | Path | None = None,
     metadata_file: str | Path | None = None,
@@ -355,8 +415,12 @@ def edf2bids(
             f"{input_file}"
         )
 
+    # %% Sidecar eye-physio.json
+    generate_physio_json(input_file, metadata_file, output_dir, events_asc_file)
+
+    # %% physioevents.json Metadata
     events = _load_asc_file(events_asc_file)
-    df_ms = _load_asc_file_as_df(events_asc_file)
+
     df_ms_reduced = _load_asc_file_as_reduced_df(events_asc_file)
 
     if metadata_file is None:
@@ -365,163 +429,22 @@ def edf2bids(
         with open(metadata_file) as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
-    # eye-physio.json Metadata
-    base_json = {
-        "Columns": ["x_coordinate", "y_coordinate", "pupil_size", "timestamp"],
-        "timestamp": {
-            "Description": (
-                "Timestamp issued by the eye-tracker "
-                "indexing the continuous recordings "
-                "corresponding to the sampled eye."
-            )
-        },
-        "x_coordinate": {
-            "Description": (
-                "Gaze position x-coordinate of the recorded eye, "
-                "in the coordinate units specified "
-                "in the corresponding metadata sidecar."
-            ),
-            "Units": "a.u.",
-        },
-        "y_coordinate": {
-            "Description": (
-                "Gaze position y-coordinate of the recorded eye, "
-                "in the coordinate units specified "
-                "in the corresponding metadata sidecar."
-            ),
-            "Units": "a.u.",
-        },
-        "pupil_size": {
-            "Description": (
-                "Pupil area of the recorded eye as calculated "
-                "by the eye-tracker in arbitrary units "
-                "(see EyeLink's documentation for conversion)."
-            ),
-            "Units": "a.u.",
-        },
-        "Manufacturer": "SR-Research",
-        "ManufacturersModelName": _extract_ManufacturersModelName(events),
-        "DeviceSerialNumber": _extract_DeviceSerialNumber(events),
-        "EnvironmentCoordinates": metadata.get("EnvironmentCoordinates"),
-        "SoftwareVersion": metadata.get("SoftwareVersion"),
-        "EyeCameraSettings": metadata.get("EyeCameraSettings"),
-        "EyeTrackerDistance": metadata.get("EyeTrackerDistance"),
-        "FeatureDetectionSettings": metadata.get("FeatureDetectionSettings"),
-        "GazeMappingSettings": metadata.get("GazeMappingSettings"),
-        "RawDataFilters": metadata.get("RawDataFilters"),
-        "SampleCoordinateSystem": metadata.get("SampleCoordinateSystem"),
-        "SampleCoordinateUnits": metadata.get("SampleCoordinateUnits"),
-        "ScreenAOIDefinition": metadata.get("ScreenAOIDefinition"),
-        "EyeTrackingMethod": _extract_EyeTrackingMethod(events),
-        "PupilFitMethod": _extract_PupilFitMethod(df_ms_reduced),
-        "SamplingFrequency": _extract_SamplingFrequency(df_ms_reduced),
-        "StartTime": _extract_StartTime(events),
-        "StopTime": _extract_StopTime(events),
-        "CalibrationUnit": _extract_CalibrationUnit(df_ms_reduced),
-        "CalibrationType": _extract_CalibrationType(df_ms_reduced),
-        "CalibrationCount": _extract_CalibrationCount(df_ms_reduced),
-        "CalibrationPosition": _extract_CalibrationPosition(df_ms_reduced),
-    }
+    events_json = BasePhysioEventsJson(metadata)
 
-    if _2eyesmode(df_ms_reduced):
-        metadata_eye1 = {
-            "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
-            "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
-            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[0]),
-        }
+    events_json.input_file = input_file
+    events_json.two_eyes = _2eyesmode(df_ms_reduced)
 
-        metadata_eye2 = {
-            "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[1::2]),
-            "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[1::2]),
-            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[1]),
-        }
-    else:
-        metadata_eye1 = {
-            "AverageCalibrationError": (_extract_AverageCalibrationError(df_ms)[0::2]),
-            "MaximalCalibrationError": (_extract_MaximalCalibrationError(df_ms)[0::2]),
-            "RecordedEye": (_extract_RecordedEye(df_ms_reduced)),
-        }
-
-    json_eye1 = dict(base_json, **metadata_eye1)
-    if _2eyesmode(df_ms_reduced):
-        json_eye2 = dict(base_json, **metadata_eye2)
-
-    # to json
-
-    output_filename_eye1 = generate_output_filename(
-        output_dir=output_dir,
-        input_file=input_file,
-        suffix="_recording-eye1_physio",
-        extension="json",
+    events_json["TaskName"] = _extract_TaskName(events)
+    events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
+        df_ms_reduced
     )
-    with open(output_filename_eye1, "w") as outfile:
-        json.dump(json_eye1, outfile, indent=4)
 
-    e2b_log.info(f"file generated: {output_filename_eye1}")
+    events_json.write(output_dir=output_dir, recording="eye1")
+    if events_json.two_eyes:
+        events_json.write(output_dir=output_dir, recording="eye2")
 
-    if _2eyesmode(df_ms_reduced):
-        output_filename_eye2 = generate_output_filename(
-            output_dir=output_dir,
-            input_file=input_file,
-            suffix="_recording-eye2_physio",
-            extension="json",
-        )
-        with open(output_filename_eye2, "w") as outfile:
-            json.dump(json_eye2, outfile, indent=4)
-
-        e2b_log.info(f"file generated: {output_filename_eye2}")
-
-    # physioevents.json Metadata
-
-    events_json = {
-        "Columns": ["onset", "duration", "trial_type", "blink", "message"],
-        "Description": "Messages logged by the measurement device",
-        "ForeignIndexColumn": "timestamp",
-        "blink": {"Description": "One indicates if the eye was closed, zero if open."},
-        "message": {"Description": "String messages logged by the eye-tracker."},
-        "trial_type": {
-            "Description": (
-                "Event type as identified by the eye-tracker's model "
-                "((either 'n/a' if not applicabble, 'fixation', or 'saccade')."
-            )
-        },
-        "TaskName": _extract_TaskName(events),
-        "InstitutionAddress": metadata.get("InstitutionAddress"),
-        "InstitutionName": metadata.get("InstitutionName"),
-        "StimulusPresentation": {
-            "ScreenDistance": metadata.get("ScreenDistance"),
-            "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
-            "ScreenSize": metadata.get("ScreenSize"),
-            "ScreenResolution": _extract_ScreenResolution(df_ms_reduced),
-        },
-    }
-
-    output_filename_eye1 = generate_output_filename(
-        output_dir=output_dir,
-        input_file=input_file,
-        suffix="_recording-eye1_physioevents",
-        extension="json",
-    )
-    with open(output_filename_eye1, "w") as outfile:
-        json.dump(events_json, outfile, indent=4)
-
-    e2b_log.info(f"file generated: {output_filename_eye1}")
-
-    if _2eyesmode(df_ms_reduced):
-
-        output_filename_eye2 = generate_output_filename(
-            output_dir=output_dir,
-            input_file=input_file,
-            suffix="_recording-eye2_physioevents",
-            extension="json",
-        )
-        with open(output_filename_eye2, "w") as outfile:
-            json.dump(events_json, outfile, indent=4)
-
-        e2b_log.info(f"file generated: {output_filename_eye2}")
-
+    #  %%
     # Samples to dataframe
-
     samples_asc_file = _convert_edf_to_asc_samples(input_file)
     if not samples_asc_file.exists():
         e2b_log.error(
@@ -539,6 +462,7 @@ def edf2bids(
     if _2eyesmode(df_ms_reduced):
         samples_eye2 = pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
 
+    # %%
     # Samples to eye_physio.tsv.gz
 
     output_filename_eye1 = generate_output_filename(
