@@ -3,13 +3,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 from eye2bids.edf2bids import (
     _check_edf2asc_present,
     _convert_edf_to_asc_events,
+    _df_events_after_start,
+    _df_physioevents,
     _extract_AverageCalibrationError,
     _extract_CalibrationPosition,
     _extract_CalibrationType,
@@ -25,8 +27,6 @@ from eye2bids.edf2bids import (
     _load_asc_file,
     _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
-    _df_events_after_start,
-    _df_physioevents,
     _physioevents_eye1,
     _physioevents_eye2,
     edf2bids,
@@ -75,8 +75,11 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
     expected_data_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
     assert expected_data_tsv.exists()
 
-    expected_events_tsv = output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
+    expected_events_tsv = (
+        output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
+    )
     assert expected_events_tsv.exists()
+
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 @pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
@@ -101,17 +104,23 @@ def test_edf_end_to_end_2eyes(metadata_file, eyelink_test_data_dir):
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
 
-    expected_data_sidecar_eye1 = output_dir / f"{input_file.stem}_recording-eye1_physio.json"
+    expected_data_sidecar_eye1 = (
+        output_dir / f"{input_file.stem}_recording-eye1_physio.json"
+    )
     assert expected_data_sidecar_eye1.exists()
     with open(expected_data_sidecar_eye1) as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 1000
     assert eyetrack["RecordedEye"] == "Left"
 
-    expected_data_tsv_eye1 = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
+    expected_data_tsv_eye1 = (
+        output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
+    )
     assert expected_data_tsv_eye1.exists()
 
-    expected_events_tsv_eye1 = output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
+    expected_events_tsv_eye1 = (
+        output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
+    )
     assert expected_events_tsv_eye1.exists()
 
     expected_events_sidecar_eye2 = (
@@ -119,16 +128,22 @@ def test_edf_end_to_end_2eyes(metadata_file, eyelink_test_data_dir):
     )
     assert expected_events_sidecar_eye2.exists()
 
-    expected_data_sidecar_eye2 = output_dir / f"{input_file.stem}_recording-eye2_physio.json"
+    expected_data_sidecar_eye2 = (
+        output_dir / f"{input_file.stem}_recording-eye2_physio.json"
+    )
     assert expected_data_sidecar_eye2.exists()
     with open(expected_data_sidecar_eye2) as f:
         eyetrack = json.load(f)
     assert eyetrack["RecordedEye"] == "Right"
 
-    expected_data_tsv_eye2 = output_dir / f"{input_file.stem}_recording-eye2_physio.tsv.gz"
+    expected_data_tsv_eye2 = (
+        output_dir / f"{input_file.stem}_recording-eye2_physio.tsv.gz"
+    )
     assert expected_data_tsv_eye2.exists()
 
-    expected_events_tsv_eye2 = output_dir / f"{input_file.stem}_recording-eye2_physioevents.tsv.gz"
+    expected_events_tsv_eye2 = (
+        output_dir / f"{input_file.stem}_recording-eye2_physioevents.tsv.gz"
+    )
     assert expected_events_tsv_eye2.exists()
 
 
@@ -614,17 +629,53 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_physioevents_tsv = output_dir / f"{input_file.stem}_recording-eye2_physioevents.tsv.gz"
+    expected_physioevents_tsv = (
+        output_dir / f"{input_file.stem}_recording-eye2_physioevents.tsv.gz"
+    )
     df = pd.read_csv(expected_physioevents_tsv, sep="\t")
     number_columns = len(df.columns)
     assert number_columns == 5
 
+
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("rest", ['fixation', 'saccade', 'fixation', 'saccade', 'fixation', 'saccade', 'fixation']),
-        ("2eyes", ['fixation', 'saccade', 'fixation', 'saccade', 'fixation', 'saccade', 'fixation']),
-        ("pitracker", ['saccade', 'fixation', 'saccade', 'fixation', 'saccade', 'fixation', 'saccade']),
+        (
+            "rest",
+            [
+                "fixation",
+                "saccade",
+                "fixation",
+                "saccade",
+                "fixation",
+                "saccade",
+                "fixation",
+            ],
+        ),
+        (
+            "2eyes",
+            [
+                "fixation",
+                "saccade",
+                "fixation",
+                "saccade",
+                "fixation",
+                "saccade",
+                "fixation",
+            ],
+        ),
+        (
+            "pitracker",
+            [
+                "saccade",
+                "fixation",
+                "saccade",
+                "fixation",
+                "saccade",
+                "fixation",
+                "saccade",
+            ],
+        ),
     ],
 )
 def test_physioevents_value(folder, expected, eyelink_test_data_dir):
