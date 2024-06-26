@@ -14,8 +14,7 @@ e2b_log = eye2bids_logger()
 class BasePhysioEventsJson(dict[str, Any]):
     """Handle content of physioevents sidedar."""
 
-    input_file: str | Path
-    has_validation: bool
+    input_file: Path
     two_eyes: bool
 
     def __init__(self, metadata: None | dict[str, Any] = None) -> None:
@@ -52,7 +51,7 @@ class BasePhysioEventsJson(dict[str, Any]):
 
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""
-        filename = Path(self.input_file).stem
+        filename = self.input_file.stem
         if recording is not None:
             return f"{filename}_recording-{recording}_physioevents.json"
         return f"{filename}_physioevents.json"
@@ -76,7 +75,7 @@ class BasePhysioEventsJson(dict[str, Any]):
 class BasePhysioJson(dict[str, Any]):
     """Handle content of physio sidedar."""
 
-    input_file: str | Path
+    input_file: Path
     has_validation: bool
     two_eyes: bool
 
@@ -137,7 +136,7 @@ class BasePhysioJson(dict[str, Any]):
 
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""
-        filename = Path(self.input_file).stem
+        filename = self.input_file.stem
         if recording is not None:
             return f"{filename}_recording-{recording}_physio.json"
         return f"{filename}_physio.json"

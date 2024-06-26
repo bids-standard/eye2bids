@@ -74,7 +74,7 @@ def _check_inputs(
 def _check_output_dir(output_dir: str | Path | None = None) -> Path:
     """Check if output directory is valid."""
     if output_dir is None:
-        output_dir = input("Enter the output directory: ")
+        output_dir = Path()
     if isinstance(output_dir, str):
         checked_output_dir = Path(output_dir)
     elif isinstance(output_dir, Path):
@@ -313,42 +313,28 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
-def edf2bids(
-    input_file: str | Path | None = None,
-    metadata_file: str | Path | None = None,
-    output_dir: str | Path | None = None,
-    interactive: bool = False,
+def generate_physio_json(
+    input_file: Path,
+    metadata_file: str | Path | None,
+    output_dir: Path,
+    events_asc_file: Path,
 ) -> None:
-    """Convert edf to tsv + json."""
-    if not _check_edf2asc_present():
-        return
-
-    input_file, metadata_file, output_dir = _check_inputs(
-        input_file, metadata_file, output_dir, interactive
-    )
-
-    # CONVERSION events
-    events_asc_file = _convert_edf_to_asc_events(input_file)
-
-    if not events_asc_file.exists():
-        e2b_log.error(
-            "The following .edf input file could not be converted to .asc:"
-            f"{input_file}"
-        )
-
-    events = _load_asc_file(events_asc_file)
-    df_ms = _load_asc_file_as_df(events_asc_file)
-    df_ms_reduced = _load_asc_file_as_reduced_df(events_asc_file)
-
+    """Generate the _physio.json."""
     if metadata_file is None:
         metadata = {}
     else:
         with open(metadata_file) as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
-    # %% Sidecar eye-physio.json
+    events = _load_asc_file(events_asc_file)
+    df_ms = _load_asc_file_as_df(events_asc_file)
+    df_ms_reduced = _load_asc_file_as_reduced_df(events_asc_file)
 
     base_json = BasePhysioJson(manufacturer="SR-Research", metadata=metadata)
+
+    base_json.input_file = input_file
+    base_json.has_validation = _has_validation(df_ms_reduced)
+    base_json.two_eyes = _2eyesmode(df_ms_reduced)
 
     base_json["ManufacturersModelName"] = _extract_ManufacturersModelName(events)
     base_json["DeviceSerialNumber"] = _extract_DeviceSerialNumber(events)
@@ -358,12 +344,6 @@ def edf2bids(
 
     base_json["StartTime"] = _extract_StartTime(events)
     base_json["StopTime"] = _extract_StopTime(events)
-
-    base_json.input_file = input_file
-
-    base_json.has_validation = _has_validation(df_ms_reduced)
-
-    base_json.two_eyes = _2eyesmode(df_ms_reduced)
 
     if base_json.two_eyes:
         metadata_eye1: dict[str, str | list[str] | list[float]] = {
@@ -411,25 +391,60 @@ def edf2bids(
             output_dir=output_dir, recording="eye2", extra_metadata=metadata_eye2
         )
 
+
+def edf2bids(
+    input_file: str | Path | None = None,
+    metadata_file: str | Path | None = None,
+    output_dir: str | Path | None = None,
+    interactive: bool = False,
+) -> None:
+    """Convert edf to tsv + json."""
+    if not _check_edf2asc_present():
+        return
+
+    input_file, metadata_file, output_dir = _check_inputs(
+        input_file, metadata_file, output_dir, interactive
+    )
+
+    # CONVERSION events
+    events_asc_file = _convert_edf_to_asc_events(input_file)
+
+    if not events_asc_file.exists():
+        e2b_log.error(
+            "The following .edf input file could not be converted to .asc:"
+            f"{input_file}"
+        )
+
+    # %% Sidecar eye-physio.json
+    generate_physio_json(input_file, metadata_file, output_dir, events_asc_file)
+
     # %% physioevents.json Metadata
+    events = _load_asc_file(events_asc_file)
+
+    df_ms_reduced = _load_asc_file_as_reduced_df(events_asc_file)
+
+    if metadata_file is None:
+        metadata = {}
+    else:
+        with open(metadata_file) as f:
+            metadata = yaml.load(f, Loader=SafeLoader)
 
     events_json = BasePhysioEventsJson(metadata)
+
+    events_json.input_file = input_file
+    events_json.two_eyes = _2eyesmode(df_ms_reduced)
 
     events_json["TaskName"] = _extract_TaskName(events)
     events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
         df_ms_reduced
     )
 
-    events_json.write(
-        output_dir=output_dir, recording="eye1", extra_metadata=metadata_eye1
-    )
-    if base_json.two_eyes:
-        events_json.write(
-            output_dir=output_dir, recording="eye2", extra_metadata=metadata_eye2
-        )
+    events_json.write(output_dir=output_dir, recording="eye1")
+    if events_json.two_eyes:
+        events_json.write(output_dir=output_dir, recording="eye2")
 
+    #  %%
     # Samples to dataframe
-
     samples_asc_file = _convert_edf_to_asc_samples(input_file)
     if not samples_asc_file.exists():
         e2b_log.error(
@@ -447,6 +462,7 @@ def edf2bids(
     if _2eyesmode(df_ms_reduced):
         samples_eye2 = pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
 
+    # %%
     # Samples to eye_physio.tsv.gz
 
     output_filename_eye1 = generate_output_filename(
