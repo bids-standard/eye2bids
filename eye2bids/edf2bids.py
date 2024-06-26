@@ -16,6 +16,8 @@ from yaml.loader import SafeLoader
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
 
+from rich import print
+
 e2b_log = eye2bids_logger()
 
 
@@ -139,44 +141,42 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
     return len(_calibrations(df))
 
 
-def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int]]:
+def _extract_CalibrationPosition(df: pd.DataFrame) -> list[ list[int] | list[list[int]] ] :
 
-    if _has_validation == False:
+    if _has_validation(df) == False:
         CalibrationPosition = []
         return CalibrationPosition
 
-    else:
-        cal_df = df[
-            df[2] == "VALIDATE"
-        ]  # .drop(columns=[2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17]).reset_index(drop=True)
-        cal_df[5] = pd.to_numeric(cal_df[5], errors="coerce")
-        df_sorted = cal_df.sort_values(by=5)
+    calibration_df = df[
+        df[2] == "VALIDATE"
+    ]
+    calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
 
-        if _2eyesmode(df) == True:
-            df_sorted = df_sorted.drop(
-                index=df_sorted.index[:: (_extract_CalibrationCount(df) * 2)]
-            )
+    if _2eyesmode(df) == True:
+        # drop duplicated calibration position
+        # because they will be the same for both eyes
+        calibration_df = calibration_df[calibration_df[6] == "LEFT"]
 
-        if _extract_CalibrationCount(df) == 1:
-            CalibrationPosition = (
-                np.array((df_sorted[8]).str.split(",", expand=True)).astype(int).tolist()
-            )
-            return CalibrationPosition
-        else:
-            CalibrationPosition = []
+    nb_calibration_postions = calibration_df[5].max() + 1 
 
-            for x in df_sorted:
-                cal_values = (
-                    np.array(
-                        (df_sorted[8][:: _extract_CalibrationCount(df)]).str.split(
-                            ",", expand=True
-                        )
-                    )
-                    .astype(int)
-                    .tolist()
-                )
-                CalibrationPosition.append(cal_values)
-            return CalibrationPosition
+    # initiliaze
+    CalibrationPosition = [[[]] * nb_calibration_postions]
+
+    for i_pos  in range(nb_calibration_postions):
+
+        results_for_this_position = calibration_df[calibration_df[5] == i_pos]
+
+        for i, calibration in enumerate(results_for_this_position.iterrows()):
+            values = calibration[1][8].split(",") 
+
+            if len(CalibrationPosition) < i +1 :
+                CalibrationPosition.append([()] * nb_calibration_postions)
+
+            CalibrationPosition[i][i_pos] = [int(x) for x  in values]
+
+    if _extract_CalibrationCount(df) == 1:
+        return CalibrationPosition[0]
+    return CalibrationPosition
 
 
 def _extract_CalibrationUnit(df: pd.DataFrame) -> str:
