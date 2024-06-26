@@ -10,13 +10,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
+from rich import print
 from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
-
-from rich import print
 
 e2b_log = eye2bids_logger()
 
@@ -141,15 +140,13 @@ def _extract_CalibrationCount(df: pd.DataFrame) -> int:
     return len(_calibrations(df))
 
 
-def _extract_CalibrationPosition(df: pd.DataFrame) -> list[ list[int] | list[list[int]] ] :
+def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[int] | list[list[int]]]:
 
     if _has_validation(df) == False:
         CalibrationPosition = []
         return CalibrationPosition
 
-    calibration_df = df[
-        df[2] == "VALIDATE"
-    ]
+    calibration_df = df[df[2] == "VALIDATE"]
     calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
 
     if _2eyesmode(df) == True:
@@ -157,22 +154,22 @@ def _extract_CalibrationPosition(df: pd.DataFrame) -> list[ list[int] | list[lis
         # because they will be the same for both eyes
         calibration_df = calibration_df[calibration_df[6] == "LEFT"]
 
-    nb_calibration_postions = calibration_df[5].max() + 1 
+    nb_calibration_postions = calibration_df[5].max() + 1
 
     # initiliaze
     CalibrationPosition = [[[]] * nb_calibration_postions]
 
-    for i_pos  in range(nb_calibration_postions):
+    for i_pos in range(nb_calibration_postions):
 
         results_for_this_position = calibration_df[calibration_df[5] == i_pos]
 
         for i, calibration in enumerate(results_for_this_position.iterrows()):
-            values = calibration[1][8].split(",") 
+            values = calibration[1][8].split(",")
 
-            if len(CalibrationPosition) < i +1 :
+            if len(CalibrationPosition) < i + 1:
                 CalibrationPosition.append([()] * nb_calibration_postions)
 
-            CalibrationPosition[i][i_pos] = [int(x) for x  in values]
+            CalibrationPosition[i][i_pos] = [int(x) for x in values]
 
     if _extract_CalibrationCount(df) == 1:
         return CalibrationPosition[0]
