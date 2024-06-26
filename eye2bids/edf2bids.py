@@ -609,7 +609,7 @@ def edf2bids(
 
     # Messages and events to physioevents.tsv.gz
 
-    if _2eyesmode(df_ms_reduced) == False:
+    if not _2eyesmode(df_ms_reduced):
         output_eventsfilename_eye1 = generate_output_filename(
             output_dir=output_dir,
             input_file=input_file,

@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -28,7 +27,6 @@ from eye2bids.edf2bids import (
     _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
     _physioevents_eye1,
-    _physioevents_eye2,
     edf2bids,
 )
 
