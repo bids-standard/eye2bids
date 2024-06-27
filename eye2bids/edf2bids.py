@@ -600,6 +600,7 @@ def edf2bids(
 
         e2b_log.info(f"file generated: {output_filename_eye2}")
 
+    # %%
     # Messages and events to dataframes
 
     events_after_start = _df_events_after_start(events)
@@ -607,6 +608,7 @@ def edf2bids(
     physioevents_eye1 = _physioevents_eye1(physioevents_reordered)
     physioevents_eye2 = _physioevents_eye2(physioevents_reordered)
 
+    # %%
     # Messages and events to physioevents.tsv.gz
 
     if not _2eyesmode(df_ms_reduced):
