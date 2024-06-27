@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 from eye2bids.edf2bids import (
@@ -637,7 +637,7 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
 
 
 @pytest.mark.parametrize(
-     "folder, expected",
+    "folder, expected",
     [
         (
             "rest",
@@ -693,6 +693,8 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
         output_dir=output_dir,
     )
 
-    expected_eyetrackphysio_tsv = output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
+    expected_eyetrackphysio_tsv = (
+        output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
+    )
     df = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
-    assert df.iloc[3:10, 2].tolist() == expected 
+    assert df.iloc[3:10, 2].tolist() == expected
