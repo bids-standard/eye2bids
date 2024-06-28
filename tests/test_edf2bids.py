@@ -540,8 +540,6 @@ def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
         ("satf", "Right"),
         ("vergence", ["Left", "Right"]),
         ("2eyes", ["Left", "Right"]),
-        ("vergence", ["Left", "Right"]),
-        ("2eyes", ["Left", "Right"]),
     ],
 )
 def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
