@@ -3,15 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
 from eye2bids.edf2bids import (
     _check_edf2asc_present,
     _convert_edf_to_asc_events,
-    _df_events_after_start,
-    _df_physioevents,
     _extract_AverageCalibrationError,
     _extract_CalibrationPosition,
     _extract_CalibrationType,
@@ -27,7 +24,6 @@ from eye2bids.edf2bids import (
     _load_asc_file,
     _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
-    _physioevents_eye1,
     edf2bids,
 )
 
@@ -110,6 +106,7 @@ def test_edf_end_to_end_2eyes(metadata_file, eyelink_test_data_dir):
     with open(expected_data_sidecar_eye1) as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 1000
+    assert eyetrack["AverageCalibrationError"] == [[0.29]]
     assert eyetrack["RecordedEye"] == "Left"
 
     expected_data_tsv_eye1 = (
@@ -122,6 +119,7 @@ def test_edf_end_to_end_2eyes(metadata_file, eyelink_test_data_dir):
     )
     assert expected_events_tsv_eye1.exists()
 
+    # %%
     expected_events_sidecar_eye2 = (
         output_dir / f"{input_file.stem}_recording-eye2_physioevents.json"
     )
@@ -133,6 +131,7 @@ def test_edf_end_to_end_2eyes(metadata_file, eyelink_test_data_dir):
     assert expected_data_sidecar_eye2.exists()
     with open(expected_data_sidecar_eye2) as f:
         eyetrack = json.load(f)
+    assert eyetrack["AverageCalibrationError"] == [[0.35]]
     assert eyetrack["RecordedEye"] == "Right"
 
     expected_data_tsv_eye2 = (
@@ -164,114 +163,6 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
     count = sum(i == "." for i in df[0])
     assert count == 0
-
-
-@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
-def test_2files_eye1(eyelink_test_data_dir):
-    """Check that for datafile with 2eyes 2 eye1 file is created and check input.
-
-    function _2eyesmode
-    """
-    input_dir = eyelink_test_data_dir / "2eyes"
-    input_file = edf_test_files(input_dir=input_dir)[0]
-
-    output_dir = data_dir() / "output"
-    output_dir.mkdir(exist_ok=True)
-
-    edf2bids(
-        input_file=input_file,
-        output_dir=output_dir,
-    )
-
-    expected_eyetrack_sidecar = (
-        output_dir / f"{input_file.stem}_recording-eye1_physio.json"
-    )
-    assert expected_eyetrack_sidecar.exists()
-    with open(expected_eyetrack_sidecar) as f:
-        eyetrack = json.load(f)
-    assert eyetrack["AverageCalibrationError"] == [[0.29]]
-    assert eyetrack["RecordedEye"] == "Left"
-
-
-@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
-def test_2files_eye2(eyelink_test_data_dir):
-    """Check that for datafile with 2eyes 2 eye2 file is created and check input.
-
-    function _2eyesmode
-    """
-    input_dir = eyelink_test_data_dir / "2eyes"
-    input_file = edf_test_files(input_dir=input_dir)[0]
-
-    output_dir = data_dir() / "output"
-    output_dir.mkdir(exist_ok=True)
-
-    edf2bids(
-        input_file=input_file,
-        output_dir=output_dir,
-    )
-
-    expected_eyetrack_sidecar = (
-        output_dir / f"{input_file.stem}_recording-eye2_physio.json"
-    )
-    assert expected_eyetrack_sidecar.exists()
-    with open(expected_eyetrack_sidecar) as f:
-        eyetrack = json.load(f)
-    assert eyetrack["AverageCalibrationError"] == [[0.35]]
-    assert eyetrack["RecordedEye"] == "Right"
-
-
-@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
-def test_2files_eye1(eyelink_test_data_dir):
-    """Check that for datafile with 2eyes 2 eye1 file is created and check input.
-
-    function _2eyesmode
-    """
-    input_dir = eyelink_test_data_dir / "2eyes"
-    input_file = edf_test_files(input_dir=input_dir)[0]
-
-    output_dir = data_dir() / "output"
-    output_dir.mkdir(exist_ok=True)
-
-    edf2bids(
-        input_file=input_file,
-        output_dir=output_dir,
-    )
-
-    expected_eyetrack_sidecar = (
-        output_dir / f"{input_file.stem}_recording-eye1_physio.json"
-    )
-    assert expected_eyetrack_sidecar.exists()
-    with open(expected_eyetrack_sidecar) as f:
-        eyetrack = json.load(f)
-    assert eyetrack["AverageCalibrationError"] == [[0.29]]
-    assert eyetrack["RecordedEye"] == "Left"
-
-
-@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
-def test_2files_eye2(eyelink_test_data_dir):
-    """Check that for datafile with 2eyes 2 eye2 file is created and check input.
-
-    function _2eyesmode
-    """
-    input_dir = eyelink_test_data_dir / "2eyes"
-    input_file = edf_test_files(input_dir=input_dir)[0]
-
-    output_dir = data_dir() / "output"
-    output_dir.mkdir(exist_ok=True)
-
-    edf2bids(
-        input_file=input_file,
-        output_dir=output_dir,
-    )
-
-    expected_eyetrack_sidecar = (
-        output_dir / f"{input_file.stem}_recording-eye2_physio.json"
-    )
-    assert expected_eyetrack_sidecar.exists()
-    with open(expected_eyetrack_sidecar) as f:
-        eyetrack = json.load(f)
-    assert eyetrack["AverageCalibrationError"] == [[0.35]]
-    assert eyetrack["RecordedEye"] == "Right"
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -610,10 +501,7 @@ def test_extract_AverageCalibrationError(folder, expected, eyelink_test_data_dir
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
-    """Check right number of columns in physioevents.tsv.gz.
-
-    function _df_physioevents, _physioevents_eye1, _physioevents_eye2
-    """
+    """Check right number of columns in physioevents.tsv.gz."""
     input_dir = eyelink_test_data_dir / "2eyes"
     print(edf_test_files(input_dir=input_dir))
     input_file = edf_test_files(input_dir=input_dir)[0]
@@ -676,10 +564,7 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
     ],
 )
 def test_physioevents_value(folder, expected, eyelink_test_data_dir):
-    """Check content physioevents.tsv.gz.
-
-    function _df_events_after_start, _df_physioevents, _physioevents_eye1, _physioevents_eye2
-    """
+    """Check content physioevents.tsv.gz."""
     input_dir = eyelink_test_data_dir / folder
     input_file = edf_test_files(input_dir=input_dir)[0]
 

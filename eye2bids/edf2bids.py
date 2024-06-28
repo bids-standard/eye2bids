@@ -314,7 +314,7 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
-def _df_events_after_start(events: list) -> pd.DataFrame:
+def _df_events_after_start(events: list[str]) -> pd.DataFrame:
 
     start_index = next(
         i for i, line in enumerate(events) if re.match(r"START\s+.*", line)
