@@ -361,65 +361,43 @@ def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:
     return physioevents_reordered
 
 
-def _physioevents_eye1(physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
-    physioevents_eye1_list = ["MSG", "EFIXL", "ESACCL", "EBLINKL"]
-    physioevents_eye1 = physioevents_reordered[
-        physioevents_reordered["trial_type"].isin(physioevents_eye1_list)
+def _physioevents_for_eye(
+    physioevents_reordered: pd.DataFrame, eye: str = "L"
+) -> pd.DataFrame:
+    physioevents_eye_list = ["MSG", f"EFIX{eye}", f"ESACC{eye}", f"EBLINK{eye}"]
+
+    physioevents = physioevents_reordered[
+        physioevents_reordered["trial_type"].isin(physioevents_eye_list)
     ]
-    physioevents_eye1 = physioevents_eye1.replace(
-        {"EFIXL": "fixation", "ESACCL": "saccade", "MSG": np.nan, None: np.nan}
+
+    physioevents = physioevents.replace(
+        {f"EFIX{eye}": "fixation", f"ESACC{eye}": "saccade", "MSG": np.nan, None: np.nan}
     )
 
-    physioevents_eye1["blink"] = 0
+    physioevents["blink"] = 0
     last_non_na_trial_type = None
 
-    for i in range(len(physioevents_eye1)):
-        current_trial_type = physioevents_eye1.iloc[i]["trial_type"]
+    for i in range(len(physioevents)):
+        current_trial_type = physioevents.iloc[i]["trial_type"]
         if pd.notna(current_trial_type):
-            if current_trial_type == "saccade" and last_non_na_trial_type == "EBLINKL":
-                physioevents_eye1.iloc[i, physioevents_eye1.columns.get_loc("blink")] = 1
+            if (
+                current_trial_type == "saccade"
+                and last_non_na_trial_type == f"EBLINK{eye}"
+            ):
+                physioevents.iloc[i, physioevents.columns.get_loc("blink")] = 1
             last_non_na_trial_type = current_trial_type
 
-    physioevents_eye1.loc[physioevents_eye1["trial_type"].isna(), "blink"] = np.nan
-    physioevents_eye1["blink"] = physioevents_eye1["blink"].astype("Int64")
-    physioevents_eye1 = physioevents_eye1[physioevents_eye1.trial_type != "EBLINKL"]
+    physioevents.loc[physioevents["trial_type"].isna(), "blink"] = np.nan
+    physioevents["blink"] = physioevents["blink"].astype("Int64")
+    physioevents = physioevents[physioevents.trial_type != f"EBLINK{eye}"]
 
-    physioevents_eye1["timestamp"] = physioevents_eye1["timestamp"].astype("Int64")
-    physioevents_eye1["duration"] = physioevents_eye1["duration"].astype("Int64")
+    physioevents["timestamp"] = physioevents["timestamp"].astype("Int64")
+    physioevents["duration"] = physioevents["duration"].astype("Int64")
 
-    physioevents_eye1 = physioevents_eye1[
+    physioevents = physioevents[
         ["timestamp", "duration", "trial_type", "blink", "message"]
     ]
-    return physioevents_eye1
-
-
-def _physioevents_eye2(physioevents_reordered: pd.DataFrame) -> pd.DataFrame:
-    physioevents_eye2_list = ["MSG", "EFIXR", "ESACCR", "EBLINKR"]
-    physioevents_eye2 = physioevents_reordered[
-        physioevents_reordered["trial_type"].isin(physioevents_eye2_list)
-    ]
-    physioevents_eye2 = physioevents_eye2.replace(
-        {"EFIXR": "fixation", "ESACCR": "saccade", "MSG": np.nan, None: np.nan}
-    )
-
-    physioevents_eye2["blink"] = 0
-    last_non_na_trial_type = None
-
-    for i in range(len(physioevents_eye2)):
-        current_trial_type = physioevents_eye2.iloc[i]["trial_type"]
-        if pd.notna(current_trial_type):
-            if current_trial_type == "saccade" and last_non_na_trial_type == "EBLINKR":
-                physioevents_eye2.iloc[i, physioevents_eye2.columns.get_loc("blink")] = 1
-            last_non_na_trial_type = current_trial_type
-
-    physioevents_eye2.loc[physioevents_eye2["trial_type"].isna(), "blink"] = np.nan
-    physioevents_eye2["blink"] = physioevents_eye2["blink"].astype("Int64")
-    physioevents_eye2 = physioevents_eye2[physioevents_eye2.trial_type != "EBLINKR"]
-
-    physioevents_eye2 = physioevents_eye2[
-        ["timestamp", "duration", "trial_type", "blink", "message"]
-    ]
-    return physioevents_eye2
+    return physioevents
 
 
 def generate_physio_json(
@@ -605,8 +583,8 @@ def edf2bids(
 
     events_after_start = _df_events_after_start(events)
     physioevents_reordered = _df_physioevents(events_after_start)
-    physioevents_eye1 = _physioevents_eye1(physioevents_reordered)
-    physioevents_eye2 = _physioevents_eye2(physioevents_reordered)
+    physioevents_eye1 = _physioevents_for_eye(physioevents_reordered, eye="L")
+    physioevents_eye2 = _physioevents_for_eye(physioevents_reordered, eye="R")
 
     # %%
     # Messages and events to physioevents.tsv.gz
@@ -619,13 +597,10 @@ def edf2bids(
             extension="tsv.gz",
         )
         if _extract_RecordedEye(df_ms_reduced) == "Left":
-            content = physioevents_eye1.to_csv(
-                sep="\t", index=False, na_rep="n/a", header=None
-            )
+            data_to_save = physioevents_eye1
         elif _extract_RecordedEye(df_ms_reduced) == "Right":
-            content = physioevents_eye2.to_csv(
-                sep="\t", index=False, na_rep="n/a", header=None
-            )
+            data_to_save = physioevents_eye2
+        content = data_to_save.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
         with gzip.open(output_eventsfilename_eye1, "wb") as f:
             f.write(content.encode())
 
