@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -313,6 +314,92 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
+def _df_events_after_start(events: list[str]) -> pd.DataFrame:
+
+    start_index = next(
+        i for i, line in enumerate(events) if re.match(r"START\s+.*", line)
+    )
+    end_index = next(
+        i for i in range(len(events) - 1, -1, -1) if re.match(r"END\s+.*", events[i])
+    )
+
+    if end_index > start_index:
+        data_lines = events[start_index + 1 : end_index]
+        return pd.DataFrame([line.strip().split("\t") for line in data_lines])
+    else:
+        return print("No 'END' found after the selected 'START'.")
+
+
+def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:
+    events_after_start["Event_Letters"] = (
+        events_after_start[0].str.extractall(r"([A-Za-z]+)").groupby(level=0).agg("".join)
+    )
+    events_after_start["Event_Numbers"] = events_after_start[0].str.extract(r"(\d+)")
+    events_after_start[["msg_timestamp", "message"]] = events_after_start[1].str.split(
+        n=1, expand=True
+    )
+    events_after_start["message"] = events_after_start["message"].astype(str)
+
+    msg_mask = events_after_start["Event_Letters"] == "MSG"
+    events_after_start.loc[msg_mask, "Event_Numbers"] = events_after_start.loc[
+        msg_mask, "msg_timestamp"
+    ]
+    physioevents_reordered = (
+        pd.concat(
+            [
+                events_after_start["Event_Numbers"],
+                events_after_start[2],
+                events_after_start["Event_Letters"],
+                events_after_start["message"],
+            ],
+            axis=1,
+            ignore_index=True,
+        )
+        .replace({None: np.nan, "None": np.nan})
+        .rename(columns={0: "timestamp", 1: "duration", 2: "trial_type", 3: "message"})
+    )
+    return physioevents_reordered
+
+
+def _physioevents_for_eye(
+    physioevents_reordered: pd.DataFrame, eye: str = "L"
+) -> pd.DataFrame:
+    physioevents_eye_list = ["MSG", f"EFIX{eye}", f"ESACC{eye}", f"EBLINK{eye}"]
+
+    physioevents = physioevents_reordered[
+        physioevents_reordered["trial_type"].isin(physioevents_eye_list)
+    ]
+
+    physioevents = physioevents.replace(
+        {f"EFIX{eye}": "fixation", f"ESACC{eye}": "saccade", "MSG": np.nan, None: np.nan}
+    )
+
+    physioevents["blink"] = 0
+    last_non_na_trial_type = None
+
+    for i in range(len(physioevents)):
+        current_trial_type = physioevents.iloc[i]["trial_type"]
+        if pd.notna(current_trial_type):
+            if (
+                current_trial_type == "saccade"
+                and last_non_na_trial_type == f"EBLINK{eye}"
+            ):
+                physioevents.iloc[i, physioevents.columns.get_loc("blink")] = 1
+            last_non_na_trial_type = current_trial_type
+
+    physioevents.loc[physioevents["trial_type"].isna(), "blink"] = np.nan
+    physioevents["blink"] = physioevents["blink"].astype("Int64")
+    physioevents = physioevents[physioevents.trial_type != f"EBLINK{eye}"]
+
+    physioevents["timestamp"] = physioevents["timestamp"].astype("Int64")
+    physioevents["duration"] = physioevents["duration"].astype("Int64")
+
+    physioevents = physioevents[
+        ["timestamp", "duration", "trial_type", "blink", "message"]
+    ]
+    return physioevents
+
+
 def generate_physio_json(
     input_file: Path,
     metadata_file: str | Path | None,
@@ -454,7 +541,7 @@ def edf2bids(
 
     samples = pd.read_csv(samples_asc_file, sep="\t", header=None)
     samples_eye1 = (
-        pd.DataFrame(samples.iloc[:, 0:4])
+        pd.DataFrame(samples.iloc[:, [2, 1, 3, 0]])
         .map(lambda x: x.strip() if isinstance(x, str) else x)
         .replace(".", np.nan, regex=False)
     )
@@ -491,7 +578,62 @@ def edf2bids(
 
         e2b_log.info(f"file generated: {output_filename_eye2}")
 
-    # Messages and events to physioevents.tsv.gz - tbc
+    # %%
+    # Messages and events to dataframes
+
+    events_after_start = _df_events_after_start(events)
+    physioevents_reordered = _df_physioevents(events_after_start)
+    physioevents_eye1 = _physioevents_for_eye(physioevents_reordered, eye="L")
+    physioevents_eye2 = _physioevents_for_eye(physioevents_reordered, eye="R")
+
+    # %%
+    # Messages and events to physioevents.tsv.gz
+
+    if not _2eyesmode(df_ms_reduced):
+        output_eventsfilename_eye1 = generate_output_filename(
+            output_dir=output_dir,
+            input_file=input_file,
+            suffix="_recording-eye1_physioevents",
+            extension="tsv.gz",
+        )
+        if _extract_RecordedEye(df_ms_reduced) == "Left":
+            data_to_save = physioevents_eye1
+        elif _extract_RecordedEye(df_ms_reduced) == "Right":
+            data_to_save = physioevents_eye2
+        content = data_to_save.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+        with gzip.open(output_eventsfilename_eye1, "wb") as f:
+            f.write(content.encode())
+
+        e2b_log.info(f"file generated: {output_eventsfilename_eye1}")
+
+    else:
+        output_eventsfilename_eye1 = generate_output_filename(
+            output_dir=output_dir,
+            input_file=input_file,
+            suffix="_recording-eye1_physioevents",
+            extension="tsv.gz",
+        )
+        content = physioevents_eye1.to_csv(
+            sep="\t", index=False, na_rep="n/a", header=None
+        )
+        with gzip.open(output_eventsfilename_eye1, "wb") as f:
+            f.write(content.encode())
+
+        e2b_log.info(f"file generated: {output_eventsfilename_eye1}")
+
+        output_eventsfilename_eye2 = generate_output_filename(
+            output_dir=output_dir,
+            input_file=input_file,
+            suffix="_recording-eye2_physioevents",
+            extension="tsv.gz",
+        )
+        content = physioevents_eye2.to_csv(
+            sep="\t", index=False, na_rep="n/a", header=None
+        )
+        with gzip.open(output_eventsfilename_eye2, "wb") as f:
+            f.write(content.encode())
+
+        e2b_log.info(f"file generated: {output_eventsfilename_eye2}")
 
 
 def generate_output_filename(
