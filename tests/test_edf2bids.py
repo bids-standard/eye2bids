@@ -258,6 +258,7 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
         ),
         (
             "rest",
+            [
                 [
                     [960, 540],
                     [960, 732],
@@ -273,9 +274,11 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                     [794, 444],
                     [960, 348],
                 ],
+            ]    
         ),
         (
             "2eyes",
+            [
                 [
                     [960, 540],
                     [960, 732],
