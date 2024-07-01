@@ -1,14 +1,21 @@
 tests/data/osf
 tests/data/output
-eye2bids/_version.py
+
 *events.json
 *eyetrack.json
 *eyetrack.tsv
 2eyes.ipynb
+test.ipynb
+
 tmp
+
+.vscode
 
 # General
 .DS_Store
+
+# hatchling
+eye2bids/_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
