@@ -127,6 +127,7 @@ def _2eyesmode(df: pd.DataFrame) -> bool:
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "CALIBRATION"]
 
+
 def _has_calibration(df: pd.DataFrame) -> bool:
     return not _calibrations(df).empty
 
