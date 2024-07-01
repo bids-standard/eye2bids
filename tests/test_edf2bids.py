@@ -274,7 +274,7 @@ def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
                     [794, 444],
                     [960, 348],
                 ],
-            ]    
+            ],
         ),
         (
             "2eyes",
