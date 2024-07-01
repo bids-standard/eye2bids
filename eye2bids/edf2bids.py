@@ -127,6 +127,9 @@ def _2eyesmode(df: pd.DataFrame) -> bool:
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "CALIBRATION"]
 
+def _has_calibration(df: pd.DataFrame) -> bool:
+    return not _calibrations(df).empty
+
 
 def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
     return _calibrations(df).iloc[0:1, 2:3].to_string(header=False, index=False)
@@ -422,15 +425,18 @@ def generate_physio_json(
     base_json.input_file = input_file
     base_json.has_validation = _has_validation(df_ms_reduced)
     base_json.two_eyes = _2eyesmode(df_ms_reduced)
+    base_json.has_calibration = _has_calibration(df_ms_reduced)
 
     base_json["ManufacturersModelName"] = _extract_ManufacturersModelName(events)
     base_json["DeviceSerialNumber"] = _extract_DeviceSerialNumber(events)
-    base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
     base_json["PupilFitMethod"] = _extract_PupilFitMethod(df_ms_reduced)
     base_json["SamplingFrequency"] = _extract_SamplingFrequency(df_ms_reduced)
 
     base_json["StartTime"] = _extract_StartTime(events)
     base_json["StopTime"] = _extract_StopTime(events)
+
+    if base_json.has_calibration:
+        base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
 
     if base_json.two_eyes:
         metadata_eye1: dict[str, str | list[str] | list[float]] = {
