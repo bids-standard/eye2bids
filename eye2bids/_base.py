@@ -16,6 +16,7 @@ class BasePhysioEventsJson(dict[str, Any]):
 
     input_file: Path
     two_eyes: bool
+    TaskName: bool
 
     def __init__(self, metadata: None | dict[str, Any] = None) -> None:
 
@@ -48,6 +49,7 @@ class BasePhysioEventsJson(dict[str, Any]):
             "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
             "ScreenSize": metadata.get("ScreenSize"),
         }
+        self["TaskName"] = metadata.get("TaskName")
 
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""
