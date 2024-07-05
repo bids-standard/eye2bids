@@ -47,8 +47,9 @@ def _check_inputs(
 
     if metadata_file in [None, ""]:
         e2b_log.info(
-            """Load the metadata.yml file with the additional metadata (find a template in the eye2bids GitHub).\n
-            This file must contain at least the additional REQUIRED metadata
+            """Load the metadata.yml file with the additional metadata.\n 
+            You can find a template in the eye2bids GitHub.\n
+            This file must contain at least the additional REQUIRED metadata\n
             in the format specified in the BIDS specification.\n"""
         )
         metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
@@ -57,7 +58,8 @@ def _check_inputs(
             e2b_log.info(
                 """You didn't pass a metadata.yml file. As this file contains metadata\n
                 which is REQUIRED for a valid BIDS dataset, the conversion process now\n
-                stops. Please start again with a metadata.yml file or run eye2bids in force mode.\n
+                stops. Please start again with a metadata.yml file\n 
+                or run eye2bids in force mode.\n
                 (will produce an invalid BIDS dataset).\n"""
             )
             raise SystemExit(1)
