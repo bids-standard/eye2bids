@@ -59,12 +59,12 @@ def _check_inputs(
                 which is REQUIRED for a valid BIDS dataset, the conversion process now\n
                 stops. Please start again with a metadata.yml file or run eye2bids in force mode.\n
                 (will produce an invalid BIDS dataset).\n"""
-                )
+            )
             raise SystemExit(1)
-        
+
         elif metadata_file in ["", None] and force:
             checked_metadata_file = None
-        
+
     elif isinstance(metadata_file, str):
         checked_metadata_file = Path(metadata_file)
     elif isinstance(metadata_file, Path):
@@ -495,7 +495,7 @@ def edf2bids(
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
     interactive: bool = False,
-    force: bool = False
+    force: bool = False,
 ) -> None:
     """Convert edf to tsv + json."""
     if not _check_edf2asc_present():
