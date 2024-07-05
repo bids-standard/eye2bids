@@ -70,4 +70,12 @@ def global_parser() -> ArgumentParser:
         type=int,
         nargs=2,
     )
+    parser.add_argument(
+        "-f",
+        "--force",
+        help="""
+        To run the converter without passing a metadata.yml file. Creates an invalid BIDS dataset.
+        """,
+        action="store_true",
+    )
     return parser

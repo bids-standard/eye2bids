@@ -55,4 +55,5 @@ def cli(argv: Sequence[str] = sys.argv) -> None:
         metadata_file=metadata_file,
         output_dir=output_dir,
         interactive=args.interactive,
+        force=args.force
     )

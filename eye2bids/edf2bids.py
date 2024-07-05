@@ -26,6 +26,7 @@ def _check_inputs(
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
     interactive: bool = False,
+    force: bool = False,
 ) -> tuple[Path, Path | None, Path]:
     """Check if inputs are valid."""
     if input_file is None:
@@ -44,16 +45,26 @@ def _check_inputs(
     else:
         raise FileNotFoundError(f"No such input file: {cheked_input_file}")
 
-    if metadata_file in [None, ""] and interactive:
+    if metadata_file in [None, ""]:
         e2b_log.info(
-            """Load the metadata.yml file with the additional metadata.\n
+            """Load the metadata.yml file with the additional metadata (find a template in the eye2bids GitHub).\n
             This file must contain at least the additional REQUIRED metadata
             in the format specified in the BIDS specification.\n"""
         )
         metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
 
-    if metadata_file in ["", None]:
-        checked_metadata_file = None
+        if metadata_file in ["", None] and not force:
+            e2b_log.info(
+                """You didn't pass a metadata.yml file. As this file contains metadata\n
+                which is REQUIRED for a valid BIDS dataset, the conversion process now\n
+                stops. Please start again with a metadata.yml file or run eye2bids in force mode.\n
+                (will produce an invalid BIDS dataset).\n"""
+                )
+            raise SystemExit(1)
+        
+        elif metadata_file in ["", None] and force:
+            checked_metadata_file = None
+        
     elif isinstance(metadata_file, str):
         checked_metadata_file = Path(metadata_file)
     elif isinstance(metadata_file, Path):
@@ -484,13 +495,14 @@ def edf2bids(
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
     interactive: bool = False,
+    force: bool = False
 ) -> None:
     """Convert edf to tsv + json."""
     if not _check_edf2asc_present():
         return
 
     input_file, metadata_file, output_dir = _check_inputs(
-        input_file, metadata_file, output_dir, interactive
+        input_file, metadata_file, output_dir, interactive, force
     )
 
     # CONVERSION events
