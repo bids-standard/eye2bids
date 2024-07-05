@@ -78,6 +78,7 @@ class BasePhysioJson(dict[str, Any]):
     input_file: Path
     has_validation: bool
     two_eyes: bool
+    has_calibration: bool
 
     def __init__(self, manufacturer: str, metadata: dict[str, Any] | None = None) -> None:
 
