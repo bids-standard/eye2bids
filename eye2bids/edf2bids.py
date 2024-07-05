@@ -251,7 +251,8 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
         .split(" ")
     )
     return [eval(i) for i in list_res]
- 
+
+
 def _extract_TaskName(events: list[str]) -> str:
     return (
         " ".join([ts for ts in events if ts.startswith("** RECORDED BY")])
@@ -259,8 +260,10 @@ def _extract_TaskName(events: list[str]) -> str:
         .replace("\n", "")
     )
 
+
 def _has_TaskName(events: str) -> bool:
     return not _extract_TaskName(events) == ""
+
 
 def _extract_StartTime(events: list[str]) -> int:
     StartTime = (
