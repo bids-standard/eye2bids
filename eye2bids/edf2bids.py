@@ -260,8 +260,7 @@ def _extract_TaskName(events: list[str]) -> str:
         .replace("\n", "")
     )
 
-
-def _has_TaskName(events: str) -> bool:
+def _has_TaskName(events: list[str]) -> bool:
     return not _extract_TaskName(events) == ""
 
 
@@ -524,9 +523,9 @@ def edf2bids(
 
     events_json.input_file = input_file
     events_json.two_eyes = _2eyesmode(df_ms_reduced)
-    events_json.has_TaskName = _has_TaskName(events)
+    events_json.TaskName = _has_TaskName(events)
 
-    if events_json.has_TaskName:
+    if events_json.TaskName:
         events_json["TaskName"] = _extract_TaskName(events)
 
     events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
