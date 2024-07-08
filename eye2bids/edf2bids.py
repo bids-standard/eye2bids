@@ -261,6 +261,7 @@ def _extract_TaskName(events: list[str]) -> str:
     )
     return TaskName
 
+
 def _has_TaskName(events: list[str]) -> bool:
     return not _extract_TaskName(events) == ""
 
