@@ -78,10 +78,12 @@ class BasePhysioJson(dict[str, Any]):
     input_file: Path
     has_validation: bool
     two_eyes: bool
+    has_calibration: bool
 
     def __init__(self, manufacturer: str, metadata: dict[str, Any] | None = None) -> None:
 
         self["Manufacturer"] = manufacturer
+        self["PhysioType"] = "eyetrack"
 
         self["Columns"] = ["x_coordinate", "y_coordinate", "pupil_size", "timestamp"]
         self["timestamp"] = {
