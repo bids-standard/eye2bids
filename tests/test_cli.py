@@ -52,7 +52,6 @@ def test_all_edf_files(input_file):
         "--input_file",
         str(input_file),
         "--output_dir",
-        str(data_dir() / "output",
-        "--force"),
+        str(data_dir() / "output", "--force"),
     ]
     cli(command)
