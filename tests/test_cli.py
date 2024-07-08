@@ -26,7 +26,7 @@ def test_edf_cli(use_relative_path, metadata_file, output_dir, eyelink_test_data
     if use_relative_path:
         input_file = input_file.relative_to(root_dir())
 
-    command = ["eye2bids", "--input_file", str(input_file)]
+    command = ["eye2bids", "--input_file", str(input_file), "--force"]
     if metadata_file is not None:
         if use_relative_path:
             metadata_file = metadata_file.relative_to(root_dir())
@@ -52,6 +52,7 @@ def test_all_edf_files(input_file):
         "--input_file",
         str(input_file),
         "--output_dir",
-        str(data_dir() / "output"),
+        str(data_dir() / "output",
+        "--force"),
     ]
     cli(command)
