@@ -85,7 +85,7 @@ class BasePhysioJson(dict[str, Any]):
         self["Manufacturer"] = manufacturer
         self["PhysioType"] = "eyetrack"
 
-        self["Columns"] = ["x_coordinate", "y_coordinate", "pupil_size", "timestamp"]
+        self["Columns"] = ["timestamp", "x_coordinate", "y_coordinate", "pupil_size"]
         self["timestamp"] = {
             "Description": (
                 "Timestamp issued by the eye-tracker "
