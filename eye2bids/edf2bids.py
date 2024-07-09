@@ -45,6 +45,7 @@ def _check_inputs(
     else:
         raise FileNotFoundError(f"No such input file: {cheked_input_file}")
 
+    checked_metadata_file = None
     if metadata_file in [None, ""]:
         e2b_log.warning(
             """Load the metadata.yml file with the additional metadata.\n
@@ -66,7 +67,6 @@ def _check_inputs(
                     )
                     raise SystemExit(1)
 
-                checked_metadata_file = None
 
     elif isinstance(metadata_file, str):
         checked_metadata_file = Path(metadata_file)
