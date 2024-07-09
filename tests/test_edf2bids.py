@@ -48,8 +48,9 @@ def _check_output_exists(output_dir, input_file, eye=1):
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
-@pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
-def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
+def test_edf_end_to_end(eyelink_test_data_dir):
+    metadata_file = data_dir() / "metadata.yml"
+
     input_dir = eyelink_test_data_dir / "satf"
     input_file = edf_test_files(input_dir=input_dir)[0]
 
@@ -75,8 +76,28 @@ def test_edf_end_to_end(metadata_file, eyelink_test_data_dir):
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
-@pytest.mark.parametrize("metadata_file", [data_dir() / "metadata.yml", None])
-def test_edf_end_to_end_2eyes(metadata_file, eyelink_test_data_dir):
+def test_edf_end_to_end_error_no_metadata(eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / "satf"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    # when force is true no system exit even with no metadata file
+    edf2bids(input_file=input_file, metadata_file=None, output_dir=output_dir, force=True)
+    # but when force is false, no metadata file triggers a failure
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        edf2bids(
+            input_file=input_file, metadata_file=None, output_dir=output_dir, force=False
+        )
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 1
+
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
+    metadata_file = data_dir() / "metadata.yml"
+
     input_dir = eyelink_test_data_dir / "2eyes"
     input_file = edf_test_files(input_dir=input_dir)[0]
 

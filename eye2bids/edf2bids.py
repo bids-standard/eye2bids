@@ -45,28 +45,32 @@ def _check_inputs(
     else:
         raise FileNotFoundError(f"No such input file: {cheked_input_file}")
 
-    if metadata_file in [None, ""]:
+    if metadata_file in [None, ""] and interactive:
         e2b_log.warning(
             """Load the metadata.yml file with the additional metadata.\n
             You can find a template in the eye2bids GitHub.\n
             This file must contain at least the additional REQUIRED metadata\n
             in the format specified in the BIDS specification.\n"""
         )
+        metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
 
-        if interactive:
-            metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
-            if metadata_file in ["", None]:
-                if not force:
-                    e2b_log.error(
-                        """You didn't pass a metadata.yml file.
-                        As this file contains metadata
-                        which is REQUIRED for a valid BIDS dataset,
-                        the conversion process now stops.
-                        Please start again with a metadata.yml file
-                        or run eye2bids in force mode.\n
-                        This will produce an invalid BIDS dataset.\n"""
-                    )
-                    raise SystemExit(1)
+    if metadata_file in [None, ""]:
+        if not force:
+            e2b_log.error(
+                """You didn't pass a metadata.yml file.
+                As this file contains metadata
+                which is REQUIRED for a valid BIDS dataset,
+                the conversion process now stops.
+                Please start again with a metadata.yml file
+                or run eye2bids in --force mode.\n
+                This will produce an invalid BIDS dataset.\n"""
+            )
+            raise SystemExit(1)
+        else:
+            e2b_log.warning(
+                """You didn't pass a metadata.yml file.
+                    Note that this will produce an invalid BIDS dataset.\n"""
+            )
 
     checked_metadata_file = None
     if isinstance(metadata_file, str):
