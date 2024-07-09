@@ -45,7 +45,6 @@ def _check_inputs(
     else:
         raise FileNotFoundError(f"No such input file: {cheked_input_file}")
 
-    checked_metadata_file = None
     if metadata_file in [None, ""]:
         e2b_log.warning(
             """Load the metadata.yml file with the additional metadata.\n
@@ -59,16 +58,18 @@ def _check_inputs(
             if metadata_file in ["", None]:
                 if not force:
                     e2b_log.error(
-                        """You didn't pass a metadata.yml file. As this file contains metadata\n
-                which is REQUIRED for a valid BIDS dataset, the conversion process now\n
-                stops. Please start again with a metadata.yml file\n
-                or run eye2bids in force mode.\n
-                (will produce an invalid BIDS dataset).\n"""
+                        """You didn't pass a metadata.yml file.
+                        As this file contains metadata
+                        which is REQUIRED for a valid BIDS dataset,
+                        the conversion process now stops.
+                        Please start again with a metadata.yml file
+                        or run eye2bids in force mode.\n
+                        This will produce an invalid BIDS dataset.\n"""
                     )
                     raise SystemExit(1)
 
-
-    elif isinstance(metadata_file, str):
+    checked_metadata_file = None
+    if isinstance(metadata_file, str):
         checked_metadata_file = Path(metadata_file)
     elif isinstance(metadata_file, Path):
         checked_metadata_file = metadata_file
