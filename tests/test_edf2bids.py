@@ -77,7 +77,7 @@ def test_edf_end_to_end(eyelink_test_data_dir):
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end_error_no_metadata(eyelink_test_data_dir):
-    input_dir = eyelink_test_data_dir / "satf"
+    input_dir = eyelink_test_data_dir / "2eyes"
     input_file = edf_test_files(input_dir=input_dir)[0]
 
     output_dir = data_dir() / "output"
@@ -144,7 +144,7 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
 
-    edf2bids(input_file=input_file, output_dir=output_dir)
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
     df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
@@ -165,7 +165,7 @@ def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
     output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
 
-    edf2bids(input_file=input_file, output_dir=output_dir)
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
     df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
@@ -549,7 +549,7 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
 
-    edf2bids(input_file=input_file, output_dir=output_dir)
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrackphysio_tsv = (
         output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
