@@ -16,7 +16,6 @@ class BasePhysioEventsJson(dict[str, Any]):
 
     input_file: Path
     two_eyes: bool
-    TaskName: bool
 
     def __init__(self, metadata: None | dict[str, Any] = None) -> None:
 

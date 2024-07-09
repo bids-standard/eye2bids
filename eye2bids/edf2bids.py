@@ -276,19 +276,6 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
     return [eval(i) for i in list_res]
 
 
-def _extract_TaskName(events: list[str]) -> str:
-    TaskName = (
-        " ".join([ts for ts in events if ts.startswith("** RECORDED BY")])
-        .replace("** RECORDED BY ", "")
-        .replace("\n", "")
-    )
-    return TaskName
-
-
-def _has_TaskName(events: list[str]) -> bool:
-    return not _extract_TaskName(events) == ""
-
-
 def _extract_StartTime(events: list[str]) -> int:
     StartTime = (
         np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
@@ -552,10 +539,6 @@ def edf2bids(
 
     events_json.input_file = input_file
     events_json.two_eyes = _2eyesmode(df_ms_reduced)
-    events_json.TaskName = _has_TaskName(events)
-
-    if events_json.TaskName:
-        events_json["TaskName"] = _extract_TaskName(events)
 
     events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
         df_ms_reduced
