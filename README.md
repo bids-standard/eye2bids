@@ -1,3 +1,5 @@
+[![test](https://github.com/bids-standard/eye2bids/actions/workflows/tests.yml/badge.svg)](https://github.com/bids-standard/eye2bids/actions/workflows/tests.yml)
+
 # eye2bids
 
 ## Installation
