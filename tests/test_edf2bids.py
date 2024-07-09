@@ -186,7 +186,7 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
     output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
 
-    edf2bids(input_file=input_file, output_dir=output_dir, force=False)
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
     df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
@@ -490,7 +490,7 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
     output_dir = data_dir() / "output"
     output_dir.mkdir(exist_ok=True)
 
-    edf2bids(input_file=input_file, output_dir=output_dir, force=False)
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_physioevents_tsv = (
         output_dir / f"{input_file.stem}_recording-eye2_physioevents.tsv.gz"
