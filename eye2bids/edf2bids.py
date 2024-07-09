@@ -54,19 +54,19 @@ def _check_inputs(
         )
 
         if interactive:
-          metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
-          if metadata_file in ["", None]:
-            if not force:
-              e2b_log.error(
-                """You didn't pass a metadata.yml file. As this file contains metadata\n
+            metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
+            if metadata_file in ["", None]:
+                if not force:
+                    e2b_log.error(
+                        """You didn't pass a metadata.yml file. As this file contains metadata\n
                 which is REQUIRED for a valid BIDS dataset, the conversion process now\n
                 stops. Please start again with a metadata.yml file\n
                 or run eye2bids in force mode.\n
                 (will produce an invalid BIDS dataset).\n"""
-            )
-              raise SystemExit(1)
+                    )
+                    raise SystemExit(1)
 
-            checked_metadata_file = None
+                checked_metadata_file = None
 
     elif isinstance(metadata_file, str):
         checked_metadata_file = Path(metadata_file)
