@@ -26,6 +26,7 @@ def _check_inputs(
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
     interactive: bool = False,
+    force: bool = False,
 ) -> tuple[Path, Path | None, Path]:
     """Check if inputs are valid."""
     if input_file is None:
@@ -45,16 +46,34 @@ def _check_inputs(
         raise FileNotFoundError(f"No such input file: {cheked_input_file}")
 
     if metadata_file in [None, ""] and interactive:
-        e2b_log.info(
+        e2b_log.warning(
             """Load the metadata.yml file with the additional metadata.\n
-            This file must contain at least the additional REQUIRED metadata
+            You can find a template in the eye2bids GitHub.\n
+            This file must contain at least the additional REQUIRED metadata\n
             in the format specified in the BIDS specification.\n"""
         )
         metadata_file = Prompt.ask("Enter the file path to the metadata.yml file")
 
-    if metadata_file in ["", None]:
-        checked_metadata_file = None
-    elif isinstance(metadata_file, str):
+    if metadata_file in [None, ""]:
+        if not force:
+            e2b_log.error(
+                """You didn't pass a metadata.yml file.
+                As this file contains metadata
+                which is REQUIRED for a valid BIDS dataset,
+                the conversion process now stops.
+                Please start again with a metadata.yml file
+                or run eye2bids in --force mode.\n
+                This will produce an invalid BIDS dataset.\n"""
+            )
+            raise SystemExit(1)
+        else:
+            e2b_log.warning(
+                """You didn't pass a metadata.yml file.
+                    Note that this will produce an invalid BIDS dataset.\n"""
+            )
+
+    checked_metadata_file = None
+    if isinstance(metadata_file, str):
         checked_metadata_file = Path(metadata_file)
     elif isinstance(metadata_file, Path):
         checked_metadata_file = metadata_file
@@ -126,6 +145,10 @@ def _2eyesmode(df: pd.DataFrame) -> bool:
 
 def _calibrations(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[3] == "CALIBRATION"]
+
+
+def _has_calibration(df: pd.DataFrame) -> bool:
+    return not _calibrations(df).empty
 
 
 def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
@@ -427,15 +450,18 @@ def generate_physio_json(
     base_json.input_file = input_file
     base_json.has_validation = _has_validation(df_ms_reduced)
     base_json.two_eyes = _2eyesmode(df_ms_reduced)
+    base_json.has_calibration = _has_calibration(df_ms_reduced)
 
     base_json["ManufacturersModelName"] = _extract_ManufacturersModelName(events)
     base_json["DeviceSerialNumber"] = _extract_DeviceSerialNumber(events)
-    base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
     base_json["PupilFitMethod"] = _extract_PupilFitMethod(df_ms_reduced)
     base_json["SamplingFrequency"] = _extract_SamplingFrequency(df_ms_reduced)
 
     base_json["StartTime"] = _extract_StartTime(events)
     base_json["StopTime"] = _extract_StopTime(events)
+
+    if base_json.has_calibration:
+        base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
 
     if base_json.two_eyes:
         metadata_eye1: dict[str, str | list[str] | list[float]] = {
@@ -489,13 +515,14 @@ def edf2bids(
     metadata_file: str | Path | None = None,
     output_dir: str | Path | None = None,
     interactive: bool = False,
+    force: bool = False,
 ) -> None:
     """Convert edf to tsv + json."""
     if not _check_edf2asc_present():
         return
 
     input_file, metadata_file, output_dir = _check_inputs(
-        input_file, metadata_file, output_dir, interactive
+        input_file, metadata_file, output_dir, interactive, force
     )
 
     # CONVERSION events
@@ -549,7 +576,7 @@ def edf2bids(
 
     samples = pd.read_csv(samples_asc_file, sep="\t", header=None)
     samples_eye1 = (
-        pd.DataFrame(samples.iloc[:, [2, 1, 3, 0]])
+        pd.DataFrame(samples.iloc[:, [0, 1, 2, 3]])
         .map(lambda x: x.strip() if isinstance(x, str) else x)
         .replace(".", np.nan, regex=False)
     )
