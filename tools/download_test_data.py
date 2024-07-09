@@ -15,6 +15,8 @@ root_dir = Path(__file__).parent.parent
 
 output_dir = root_dir / "tests" / "data" / "osf"
 
+print(f"Saving files to {output_dir}")
+
 if output_dir.exists():
     shutil.rmtree(output_dir)
 output_dir.mkdir(parents=True)
