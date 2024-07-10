@@ -12,12 +12,12 @@ e2b_log = eye2bids_logger()
 
 
 class BasePhysioEventsJson(dict[str, Any]):
-    """Handle content of physioevents sidedar."""
+    """Handle content of physioevents sidecar."""
 
     input_file: Path
     two_eyes: bool
 
-    def __init__(self, metadata: None | dict[str, Any] = None) -> None:
+    def __init__(self) -> None:
 
         self["Columns"] = ["onset", "duration", "trial_type", "blink", "message"]
         self["Description"] = "Messages logged by the measurement device"
@@ -34,22 +34,6 @@ class BasePhysioEventsJson(dict[str, Any]):
             )
         }
 
-        self.update_from_metadata(metadata)
-
-    def update_from_metadata(self, metadata: None | dict[str, Any] = None) -> None:
-        """Update content of json side car based on metadata."""
-        if metadata is None:
-            return None
-
-        self["InstitutionAddress"] = metadata.get("InstitutionAddress")
-        self["InstitutionName"] = metadata.get("InstitutionName")
-        self["StimulusPresentation"] = {
-            "ScreenDistance": metadata.get("ScreenDistance"),
-            "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
-            "ScreenSize": metadata.get("ScreenSize"),
-        }
-        self["TaskName"] = metadata.get("TaskName")
-
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""
         filename = self.input_file.stem
@@ -61,6 +45,44 @@ class BasePhysioEventsJson(dict[str, Any]):
         self,
         output_dir: Path,
         recording: str | None = None,
+    ) -> None:
+        """Write to json."""
+        content = {key: value for key, value in self.items() if self[key] is not None}
+        with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
+            json.dump(content, outfile, indent=4)
+        # e2b_log.info(f"file generated: {self.output_filename(recording=recording)}")
+
+
+class BaseEventsJson(dict[str, Any]):
+    """Handle content of events sidecar."""
+
+    input_file: Path
+
+    def __init__(self, metadata: None | dict[str, Any] = None) -> None:
+        self.update_from_metadata(metadata)
+
+    def update_from_metadata(self, metadata: None | dict[str, Any] = None) -> None:
+        """Update content of json side car based on metadata."""
+        if metadata is None:
+            return None
+
+        self["TaskName"] = metadata.get("TaskName")
+        self["InstitutionAddress"] = metadata.get("InstitutionAddress")
+        self["InstitutionName"] = metadata.get("InstitutionName")
+        self["StimulusPresentation"] = {
+            "ScreenDistance": metadata.get("ScreenDistance"),
+            "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
+            "ScreenSize": metadata.get("ScreenSize"),
+        }
+
+    def output_filename(self) -> str:
+        """Generate output filename."""
+        filename = self.input_file.stem
+        return f"{filename}_events.json"
+
+    def write(
+        self,
+        output_dir: Path,
         extra_metadata: dict[str, str | list[str] | list[float]] | None = None,
     ) -> None:
         """Write to json."""
@@ -69,7 +91,7 @@ class BasePhysioEventsJson(dict[str, Any]):
                 self[key] = value
 
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
+        with open(output_dir / self.output_filename(), "w") as outfile:
             json.dump(content, outfile, indent=4)
 
 
