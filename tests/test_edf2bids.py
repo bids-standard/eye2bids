@@ -61,9 +61,7 @@ def test_edf_end_to_end(eyelink_test_data_dir):
 
     _check_output_exists(output_dir, input_file)
 
-    expected_events_sidecar = (
-        output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
-    )
+    expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar) as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
@@ -108,9 +106,7 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
 
     _check_output_exists(output_dir, input_file)
 
-    expected_events_sidecar_eye1 = (
-        output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
-    )
+    expected_events_sidecar_eye1 = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar_eye1) as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
