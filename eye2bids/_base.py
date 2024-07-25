@@ -17,7 +17,7 @@ class BasePhysioEventsJson(dict[str, Any]):
     input_file: Path
     two_eyes: bool
 
-    def __init__(self) -> None:
+    def __init__(self, metadata: None | dict[str, Any] = None) -> None:
 
         self["Columns"] = ["onset", "duration", "trial_type", "blink", "message"]
         self["Description"] = "Messages logged by the measurement device"
@@ -33,6 +33,22 @@ class BasePhysioEventsJson(dict[str, Any]):
                 "((either 'n/a' if not applicabble, 'fixation', or 'saccade')."
             )
         }
+
+        self.update_from_metadata(metadata)
+
+    def update_from_metadata(self, metadata: None | dict[str, Any] = None) -> None:
+        """Update content of json side car based on metadata."""
+        if metadata is None:
+            return None
+
+        self["InstitutionAddress"] = metadata.get("InstitutionAddress")
+        self["InstitutionName"] = metadata.get("InstitutionName")
+        self["StimulusPresentation"] = {
+            "ScreenDistance": metadata.get("ScreenDistance"),
+            "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
+            "ScreenSize": metadata.get("ScreenSize"),
+        }
+        self["TaskName"] = metadata.get("TaskName")
 
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""

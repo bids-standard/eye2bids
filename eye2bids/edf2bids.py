@@ -550,6 +550,8 @@ def edf2bids(
 
     events_json = BaseEventsJson(metadata)
 
+    events_json.input_file = input_file
+
     events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
         df_ms_reduced
     )
