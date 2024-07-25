@@ -24,3 +24,4 @@ GazeMappingSettings:
 RawDataFilters:
 InstitutionName: str
 InstitutionAddress: str
+TaskName: str

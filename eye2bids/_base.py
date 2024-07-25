@@ -48,6 +48,7 @@ class BasePhysioEventsJson(dict[str, Any]):
             "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
             "ScreenSize": metadata.get("ScreenSize"),
         }
+        self["TaskName"] = metadata.get("TaskName")
 
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""
