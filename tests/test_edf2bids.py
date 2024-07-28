@@ -69,7 +69,7 @@ def _check_output_content(output_dir, input_file, eye=1):
             output_dir / f"{input_file.stem}_recording-eye{eye}{ending}"
         ).with_suffix(".json")
 
-        df = pd.read_csv(tsv_file, sep="\t")
+        df = pd.read_csv(tsv_file, sep="\t", header=None)
         with open(json_file) as f:
             metadata = json.load(f)
         assert len(df.columns) == len(metadata["Columns"])
