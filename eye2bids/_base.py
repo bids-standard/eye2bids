@@ -24,14 +24,19 @@ class BasePhysioEventsJson(dict[str, Any]):
         self["ForeignIndexColumn"] = "timestamp"
 
         self["blink"] = {
-            "Description": "One indicates if the eye was closed, zero if open."
+            "Description": "Gives status of the eye.",
+            "Levels": {
+                "0": "Indicates if the eye was open.",
+                "1": "Indicates if the eye was closed.",
+            },
         }
         self["message"] = {"Description": "String messages logged by the eye-tracker."}
         self["trial_type"] = {
-            "Description": (
-                "Event type as identified by the eye-tracker's model "
-                "((either 'n/a' if not applicabble, 'fixation', or 'saccade')."
-            )
+            "Description": "Event type as identified by the eye-tracker's model.",
+            "Levels": {
+                "fixation": "Indicates a fixation.",
+                "saccade": "Indicates a saccade.",
+            },
         }
 
         self.update_from_metadata(metadata)

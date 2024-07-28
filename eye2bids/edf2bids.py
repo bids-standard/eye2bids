@@ -324,13 +324,13 @@ def _load_asc_file_as_df(events_asc_file: str | Path) -> pd.DataFrame:
 
 
 def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
-    # reduced dataframe without MSG and sample columns
+    """Reduce dataframe without MSG and sample columns."""
     df_ms = _load_asc_file_as_df(events_asc_file)
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
 def _df_events_after_start(events: list[str]) -> pd.DataFrame:
-
+    """Extract data between START and END messages."""
     start_index = next(
         i for i, line in enumerate(events) if re.match(r"START\s+.*", line)
     )
@@ -342,7 +342,7 @@ def _df_events_after_start(events: list[str]) -> pd.DataFrame:
         data_lines = events[start_index + 1 : end_index]
         return pd.DataFrame([line.strip().split("\t") for line in data_lines])
     else:
-        return print("No 'END' found after the selected 'START'.")
+        return e2b_log.warning("No 'END' found after the selected 'START'.")
 
 
 def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:

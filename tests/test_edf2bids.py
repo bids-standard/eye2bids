@@ -37,14 +37,46 @@ def test_convert_edf_to_asc_events(input_file):
     assert Path(asc_file).exists()
 
 
-def _check_output_exists(output_dir, input_file, eye=1):
+def _check_output_exists(output_dir: Path, input_file: Path, eye=1):
+    for suffix in [".json", ".tsv.gz"]:
+        for ending in [
+            "_physioevents",
+            "_physio",
+        ]:
+            assert (
+                (output_dir / f"{input_file.stem}_recording-eye{eye}{ending}")
+                .with_suffix(suffix)
+                .exists()
+            )
+
+
+def _check_output_content(output_dir, input_file, eye=1):
+    """Check content of output.
+
+    Make sure each column in the tsv has a description.
+
+    Ensure that all timestamps in physio.tsv.gz are evenly spaced:
+    as they should be regular sampled.
+    """
     for ending in [
-        "_physioevents.json",
-        "_physio.json",
-        "_physio.tsv.gz",
-        "_physioevents.tsv.gz",
+        "_physioevents",
+        "_physio",
     ]:
-        assert (output_dir / f"{input_file.stem}_recording-eye{eye}{ending}").exists()
+        tsv_file = (
+            output_dir / f"{input_file.stem}_recording-eye{eye}{ending}"
+        ).with_suffix(".tsv.gz")
+        json_file = (
+            output_dir / f"{input_file.stem}_recording-eye{eye}{ending}"
+        ).with_suffix(".json")
+
+        df = pd.read_csv(tsv_file, sep="\t")
+        with open(json_file) as f:
+            metadata = json.load(f)
+        assert len(df.columns) == len(metadata["Columns"])
+
+        # space between timestamps should always be the same.
+        if ending == "_physio":
+            assert len(df[0].diff().unique()) == 1
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -60,6 +92,7 @@ def test_edf_end_to_end(eyelink_test_data_dir):
     edf2bids(input_file=input_file, metadata_file=metadata_file, output_dir=output_dir)
 
     _check_output_exists(output_dir, input_file)
+    _check_output_content(output_dir, input_file)
 
     expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar) as f:
@@ -105,6 +138,7 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     edf2bids(input_file=input_file, metadata_file=metadata_file, output_dir=output_dir)
 
     _check_output_exists(output_dir, input_file)
+    _check_output_content(output_dir, input_file)
 
     expected_events_sidecar_eye1 = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar_eye1) as f:
@@ -121,6 +155,7 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     assert eyetrack["RecordedEye"] == "Left"
 
     _check_output_exists(output_dir, input_file, eye=2)
+    _check_output_content(output_dir, input_file, eye=2)
 
     expected_data_sidecar_eye2 = (
         output_dir / f"{input_file.stem}_recording-eye2_physio.json"
