@@ -76,7 +76,8 @@ def _check_output_content(output_dir, input_file, eye=1):
 
         # space between timestamps should always be the same.
         if ending == "_physio":
-            assert len(df[0].diff().unique()) == 1
+            # length is because  first rwo will give a nan
+            assert len(df[0].diff().unique()) == 2
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
