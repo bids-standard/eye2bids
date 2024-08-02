@@ -30,21 +30,80 @@ from eye2bids.edf2bids import (
 from .conftest import asc_test_files, data_dir, edf_test_files
 
 
-@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 @pytest.mark.parametrize("input_file", edf_test_files())
 def test_convert_edf_to_asc_events(input_file):
     asc_file = _convert_edf_to_asc_events(input_file)
     assert Path(asc_file).exists()
 
 
-def _check_output_exists(output_dir, input_file, eye=1):
+def _check_output_exists(output_dir: Path, input_file: Path, eye=1):
+    for suffix in [".json", ".tsv.gz"]:
+        for ending in [
+            "_physioevents",
+            "_physio",
+        ]:
+            assert (
+                (output_dir / f"{input_file.stem}_recording-eye{eye}{ending}")
+                .with_suffix(suffix)
+                .exists()
+            )
+
+
+def _check_output_content(output_dir, input_file, eye=1):
+    """Check content of output.
+
+    Make sure each column in the tsv has a description.
+
+    Ensure that all timestamps in physio.tsv.gz are evenly spaced:
+    as they should be regular sampled.
+    """
     for ending in [
-        "_physioevents.json",
-        "_physio.json",
-        "_physio.tsv.gz",
-        "_physioevents.tsv.gz",
+        "_physioevents",
+        "_physio",
     ]:
-        assert (output_dir / f"{input_file.stem}_recording-eye{eye}{ending}").exists()
+        tsv_file = (
+            output_dir / f"{input_file.stem}_recording-eye{eye}{ending}"
+        ).with_suffix(".tsv.gz")
+        json_file = (
+            output_dir / f"{input_file.stem}_recording-eye{eye}{ending}"
+        ).with_suffix(".json")
+
+        df = pd.read_csv(tsv_file, sep="\t", header=None)
+        with open(json_file) as f:
+            metadata = json.load(f)
+        assert len(df.columns) == len(metadata["Columns"])
+
+        # space between timestamps should always be the same.
+        if ending == "_physio":
+            # length is because  first rwo will give a nan
+            assert len(df[0].diff().unique()) == 2
+
+
+@pytest.mark.parametrize(
+    "folder",
+    [
+        "emg",
+        "lt",
+        "pitracker",
+        "rest",
+        "vergence",
+    ],
+)
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+def test_edf_end_to_end_all(eyelink_test_data_dir, folder):
+    """Run conversion of all test datasets and check output."""
+    metadata_file = data_dir() / "metadata.yml"
+
+    input_dir = eyelink_test_data_dir / folder
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(input_file=input_file, metadata_file=metadata_file, output_dir=output_dir)
+
+    _check_output_exists(output_dir, input_file)
+    _check_output_content(output_dir, input_file)
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -60,10 +119,9 @@ def test_edf_end_to_end(eyelink_test_data_dir):
     edf2bids(input_file=input_file, metadata_file=metadata_file, output_dir=output_dir)
 
     _check_output_exists(output_dir, input_file)
+    _check_output_content(output_dir, input_file)
 
-    expected_events_sidecar = (
-        output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
-    )
+    expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar) as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
@@ -107,10 +165,9 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     edf2bids(input_file=input_file, metadata_file=metadata_file, output_dir=output_dir)
 
     _check_output_exists(output_dir, input_file)
+    _check_output_content(output_dir, input_file)
 
-    expected_events_sidecar_eye1 = (
-        output_dir / f"{input_file.stem}_recording-eye1_physioevents.json"
-    )
+    expected_events_sidecar_eye1 = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar_eye1) as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
@@ -125,6 +182,7 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     assert eyetrack["RecordedEye"] == "Left"
 
     _check_output_exists(output_dir, input_file, eye=2)
+    _check_output_content(output_dir, input_file, eye=2)
 
     expected_data_sidecar_eye2 = (
         output_dir / f"{input_file.stem}_recording-eye2_physio.json"

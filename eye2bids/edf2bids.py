@@ -14,7 +14,7 @@ import yaml
 from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
-from eye2bids._base import BasePhysioEventsJson, BasePhysioJson
+from eye2bids._base import BaseEventsJson, BasePhysioEventsJson, BasePhysioJson
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
 
@@ -324,13 +324,13 @@ def _load_asc_file_as_df(events_asc_file: str | Path) -> pd.DataFrame:
 
 
 def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
-    # reduced dataframe without MSG and sample columns
+    """Reduce dataframe without MSG and sample columns."""
     df_ms = _load_asc_file_as_df(events_asc_file)
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
 def _df_events_after_start(events: list[str]) -> pd.DataFrame:
-
+    """Extract data between START and END messages."""
     start_index = next(
         i for i, line in enumerate(events) if re.match(r"START\s+.*", line)
     )
@@ -342,7 +342,7 @@ def _df_events_after_start(events: list[str]) -> pd.DataFrame:
         data_lines = events[start_index + 1 : end_index]
         return pd.DataFrame([line.strip().split("\t") for line in data_lines])
     else:
-        return print("No 'END' found after the selected 'START'.")
+        return e2b_log.warning("No 'END' found after the selected 'START'.")
 
 
 def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:
@@ -491,10 +491,12 @@ def generate_physio_json(
             )[1::2]
 
     base_json.write(output_dir=output_dir, recording="eye1", extra_metadata=metadata_eye1)
+    e2b_log.info(f"file generated: {base_json.output_filename()}")
     if base_json.two_eyes:
         base_json.write(
             output_dir=output_dir, recording="eye2", extra_metadata=metadata_eye2
         )
+        e2b_log.info(f"file generated: {base_json.output_filename()}")
 
 
 def edf2bids(
@@ -512,7 +514,7 @@ def edf2bids(
         input_file, metadata_file, output_dir, interactive, force
     )
 
-    # CONVERSION events
+    # CONVERSION events #
     events_asc_file = _convert_edf_to_asc_events(input_file)
 
     if not events_asc_file.exists():
@@ -521,35 +523,46 @@ def edf2bids(
             f"{input_file}"
         )
 
-    # %% Sidecar eye-physio.json
+    # SIDECARS #
+    # %% physio.json
     generate_physio_json(input_file, metadata_file, output_dir, events_asc_file)
-
-    # %% physioevents.json Metadata
+    # %% physioevents.json
     events = _load_asc_file(events_asc_file)
 
     df_ms_reduced = _load_asc_file_as_reduced_df(events_asc_file)
 
+    physioevents_json = BasePhysioEventsJson()
+
+    physioevents_json.input_file = input_file
+    physioevents_json.two_eyes = _2eyesmode(df_ms_reduced)
+
+    physioevents_json.write(output_dir=output_dir, recording="eye1")
+    e2b_log.info(f"file generated: {physioevents_json.output_filename()}")
+    if physioevents_json.two_eyes:
+        physioevents_json.write(output_dir=output_dir, recording="eye2")
+        e2b_log.info(f"file generated: {physioevents_json.output_filename()}")
+    # %% events.json
     if metadata_file is None:
         metadata = {}
     else:
         with open(metadata_file) as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
-    events_json = BasePhysioEventsJson(metadata)
+    events_json = BaseEventsJson(metadata)
 
     events_json.input_file = input_file
-    events_json.two_eyes = _2eyesmode(df_ms_reduced)
 
     events_json["StimulusPresentation"]["ScreenResolution"] = _extract_ScreenResolution(
         df_ms_reduced
     )
 
-    events_json.write(output_dir=output_dir, recording="eye1")
-    if events_json.two_eyes:
-        events_json.write(output_dir=output_dir, recording="eye2")
+    events_json.input_file = input_file
 
-    #  %%
-    # Samples to dataframe
+    events_json.write(output_dir=output_dir)
+    e2b_log.info(f"file generated: {events_json.output_filename()}")
+
+    # SAMPLES #
+    # samples to dataframe
     samples_asc_file = _convert_edf_to_asc_samples(input_file)
     if not samples_asc_file.exists():
         e2b_log.error(
@@ -596,6 +609,7 @@ def edf2bids(
 
         e2b_log.info(f"file generated: {output_filename_eye2}")
 
+    # MESSAGES AND PHYSIOEVENTS #
     # %%
     # Messages and events to dataframes
 
