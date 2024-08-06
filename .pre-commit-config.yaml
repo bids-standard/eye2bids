@@ -56,7 +56,7 @@ repos:
     rev: v1.11.1
     hooks:
     -   id: mypy
-        additional_dependencies: [types-all]
+        additional_dependencies: [types-requests, types-PyYAML, numpy]
         args: [--config-file=pyproject.toml]
 
 -   repo: https://github.com/pyCQA/flake8
