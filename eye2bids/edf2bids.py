@@ -277,9 +277,11 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
 
 
 def _extract_StartTime(events: list[str]) -> int:
-    StartTime = pd.DataFrame([st.split() for st in events if st.startswith("START")])[
-        1
-    ].astype(int)
+    StartTime = (
+        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
+        .astype(int)
+        .tolist()
+    )
     if len(StartTime) > 1:
         e2b_log.info(
             """Your input file contains multiple start times.\n
@@ -288,14 +290,15 @@ def _extract_StartTime(events: list[str]) -> int:
              Please consider changing your code accordingly
              for future eyetracking experiments.\n"""
         )
-        return StartTime[0]
-    return StartTime
+    return StartTime[0]
 
 
 def _extract_StopTime(events: list[str]) -> int:
-    StopTime = pd.DataFrame([so.split() for so in events if so.startswith("END")])[
-        1
-    ].astype(int)
+    StopTime = (
+        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
+        .astype(int)
+        .tolist()
+    )
     if len(StopTime) > 1:
         e2b_log.info(
             """Your input file contains multiple stop times.\n
@@ -304,8 +307,7 @@ def _extract_StopTime(events: list[str]) -> int:
              Please consider changing your code accordingly
              for future eyetracking experiments.\n"""
         )
-        return StopTime[-1]
-    return StopTime
+    return StopTime[-1]
 
 
 def _load_asc_file(events_asc_file: str | Path) -> list[str]:
