@@ -277,11 +277,9 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
 
 
 def _extract_StartTime(events: list[str]) -> int:
-    StartTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
+    StartTime = pd.DataFrame([st.split() for st in events if st.startswith("START")])[
+        1
+    ].astype(int)
     if len(StartTime) > 1:
         e2b_log.info(
             """Your input file contains multiple start times.\n
@@ -295,11 +293,9 @@ def _extract_StartTime(events: list[str]) -> int:
 
 
 def _extract_StopTime(events: list[str]) -> int:
-    StopTime = (
-        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
-        .astype(int)
-        .tolist()
-    )
+    StopTime = pd.DataFrame([so.split() for so in events if so.startswith("END")])[
+        1
+    ].astype(int)
     if len(StopTime) > 1:
         e2b_log.info(
             """Your input file contains multiple stop times.\n
