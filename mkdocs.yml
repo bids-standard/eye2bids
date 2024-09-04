@@ -1,4 +1,65 @@
 ---
-site_name: eye2bids
+site_name: eye2bids - Convert eyetracking data to a BIDS compatible format
+site_url: https://eye2bids.readthedocs.io/en/latest/
+repo_url: https://github.com/bids-standard/eye2bids
+copyright: <a href="https://choosealicense.com/licenses/mit/">License</a> &copy; 2024 BIDS Contributors<br>
+
 theme:
     name: material
+    palette:
+        primary: indigo
+    favicon: assets/favicon.png
+    logo: assets/logo.png
+    features:
+    -   content.code.copy
+    -   content.code.annotate
+
+nav:
+-   Welcome: index.md
+-   About EyeTracking-BIDS: about.md
+-   Requirements: requirements.md
+-   Installation: installation.md
+-   Usage: usage.md
+-   Integration in ezBIDS: ezbids.md
+-   Links and further reading: resources.md
+
+
+extra:
+    generator: false
+    social:
+    -   icon: fontawesome/brands/github
+        link: https://github.com/bids-standard/bids-specification/
+    -   icon: fontawesome/brands/x-twitter
+        link: https://x.com/BIDSstandard/
+    -   icon: fontawesome/brands/mastodon
+        link: https://fosstodon.org/@bidsstandard
+    -   icon: fontawesome/brands/google
+        link: https://groups.google.com/g/bids-discussion
+    -   icon: fontawesome/brands/instagram
+        link: https://www.instagram.com/bidsstandard/
+    -   icon: fontawesome/brands/youtube
+        link: https://www.youtube.com/channel/UCxZUcYfd_nvIVWAbzRB1tlw
+
+markdown_extensions:
+-   admonition
+-   abbr
+-   attr_list
+-   def_list
+-   footnotes
+-   meta
+-   md_in_html
+-   codehilite
+-   pymdownx.critic
+-   pymdownx.caret
+-   pymdownx.keys
+-   pymdownx.mark
+-   pymdownx.tilde
+-   pymdownx.tabbed
+-   pymdownx.details
+-   pymdownx.inlinehilite
+-   pymdownx.smartsymbols
+-   pymdownx.tasklist:
+        custom_checkbox: true
+-   pymdownx.superfences
+-   pymdownx.tabbed:
+        alternate_style: true
