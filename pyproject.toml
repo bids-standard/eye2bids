@@ -94,6 +94,9 @@ disallow_any_generics = true
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true
+plugins = [
+    "numpy.typing.mypy_plugin"
+]
 warn_redundant_casts = true
 warn_unused_ignores = true
 
@@ -114,6 +117,6 @@ module = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-ra -q -vv --cov eye2bids"
+addopts = "-ra -q -vv --cov eye2bids --durations=0"
 norecursedirs = "data"
 testpaths = ["tests/"]

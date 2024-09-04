@@ -22,13 +22,13 @@ repos:
         args: [--profile, black]
 
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.16.0
+    rev: v3.17.0
     hooks:
     -   id: pyupgrade
         args: [--py38-plus]
 
 -   repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 24.8.0
     hooks:
     -   id: black
         args: [--config, pyproject.toml]
@@ -47,20 +47,20 @@ repos:
         args: [--mapping, '4', --sequence, '4', --offset, '0']
 
 -   repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.13.0
+    rev: v2.14.0
     hooks:
     -   id: pretty-format-toml
         args: [--autofix, --indent, '4']
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.11.2
     hooks:
     -   id: mypy
-        additional_dependencies: [types-all]
+        additional_dependencies: [types-requests, types-PyYAML, numpy]
         args: [--config-file=pyproject.toml]
 
 -   repo: https://github.com/pyCQA/flake8
-    rev: 7.1.0
+    rev: 7.1.1
     hooks:
     -   id: flake8
         args: [--config, .flake8, --verbose]
