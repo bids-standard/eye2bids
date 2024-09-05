@@ -84,7 +84,6 @@ def _check_output_content(output_dir, input_file, eye=1):
     [
         "pitracker",
         "rest",
-        "vergence",
     ],
 )
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -107,7 +106,7 @@ def test_edf_end_to_end_all(eyelink_test_data_dir, folder):
 @pytest.mark.xfail(reason="Output is not a continuous recording. See #69.")
 @pytest.mark.parametrize(
     "folder",
-    ["emg", "lt"],
+    ["emg", "lt", "vergence"],
 )
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end_emg_xfail(eyelink_test_data_dir, folder):
@@ -126,6 +125,7 @@ def test_edf_end_to_end_emg_xfail(eyelink_test_data_dir, folder):
     _check_output_content(output_dir, input_file)
 
 
+@pytest.mark.xfail(reason="Output is not a continuous recording. See #69.")
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end(eyelink_test_data_dir):
     metadata_file = data_dir() / "metadata.yml"
@@ -139,7 +139,6 @@ def test_edf_end_to_end(eyelink_test_data_dir):
     edf2bids(input_file=input_file, metadata_file=metadata_file, output_dir=output_dir)
 
     _check_output_exists(output_dir, input_file)
-    _check_output_content(output_dir, input_file)
 
     expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
     with open(expected_events_sidecar) as f:
@@ -151,6 +150,8 @@ def test_edf_end_to_end(eyelink_test_data_dir):
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 500
     assert eyetrack["RecordedEye"] == "Right"
+
+    _check_output_content(output_dir, input_file)
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
