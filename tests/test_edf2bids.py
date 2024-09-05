@@ -75,7 +75,7 @@ def _check_output_content(output_dir, input_file, eye=1):
 
         # space between timestamps should always be the same.
         if ending == "_physio":
-            # length is because  first rwo will give a nan
+            # length is because first row will give a nan
             assert len(df[0].diff().unique()) == 2
 
 
