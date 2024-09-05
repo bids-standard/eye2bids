@@ -117,6 +117,6 @@ module = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-ra -q -vv --cov eye2bids --durations=0"
+addopts = "-ra --strict-config --strict-markers -q -vv --cov eye2bids --durations=0"
 norecursedirs = "data"
 testpaths = ["tests/"]

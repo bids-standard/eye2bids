@@ -1,6 +1,10 @@
 ---
 name: test
 
+# Force to use color
+env:
+    FORCE_COLOR: true
+
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
