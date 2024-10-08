@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from eye2bids._parser import global_parser
 from eye2bids.edf2bids import edf2bids
