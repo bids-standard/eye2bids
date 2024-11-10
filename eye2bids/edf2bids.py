@@ -255,8 +255,8 @@ def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
 def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
     eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
     recorded_eye_map: dict[str, str | list[str]] = {
-        "L": "left",
-        "R": "right",
+        "L": "Left",
+        "R": "Right",
         "LR": ["Left", "Right"],
     }
     if eye in recorded_eye_map:
