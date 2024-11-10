@@ -69,7 +69,7 @@ def _check_output_content(output_dir, input_file, eye=1):
         ).with_suffix(".json")
 
         df = pd.read_csv(tsv_file, sep="\t", header=None)
-        with open(json_file) as f:
+        with json_file.open() as f:
             metadata = json.load(f)
         assert len(df.columns) == len(metadata["Columns"])
 
@@ -141,12 +141,12 @@ def test_edf_end_to_end(eyelink_test_data_dir):
     _check_output_exists(output_dir, input_file)
 
     expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
-    with open(expected_events_sidecar) as f:
+    with expected_events_sidecar.open() as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
 
     expected_data_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physio.json"
-    with open(expected_data_sidecar) as f:
+    with expected_data_sidecar.open() as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 500
     assert eyetrack["RecordedEye"] == "Right"
@@ -189,14 +189,14 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     _check_output_content(output_dir, input_file)
 
     expected_events_sidecar_eye1 = output_dir / f"{input_file.stem}_events.json"
-    with open(expected_events_sidecar_eye1) as f:
+    with expected_events_sidecar_eye1.open() as f:
         events = json.load(f)
     assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
 
     expected_data_sidecar_eye1 = (
         output_dir / f"{input_file.stem}_recording-eye1_physio.json"
     )
-    with open(expected_data_sidecar_eye1) as f:
+    with expected_data_sidecar_eye1.open() as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 1000
     assert eyetrack["AverageCalibrationError"] == [[0.29]]
@@ -208,7 +208,7 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     expected_data_sidecar_eye2 = (
         output_dir / f"{input_file.stem}_recording-eye2_physio.json"
     )
-    with open(expected_data_sidecar_eye2) as f:
+    with expected_data_sidecar_eye2.open() as f:
         eyetrack = json.load(f)
     assert eyetrack["AverageCalibrationError"] == [[0.35]]
     assert eyetrack["RecordedEye"] == "Right"

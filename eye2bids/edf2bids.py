@@ -312,7 +312,7 @@ def _extract_StopTime(events: list[str]) -> int:
 
 
 def _load_asc_file(events_asc_file: str | Path) -> list[str]:
-    with open(events_asc_file) as f:
+    with Path(events_asc_file).open() as f:
         return f.readlines()
 
 
@@ -424,7 +424,7 @@ def generate_physio_json(
     if metadata_file is None:
         metadata = {}
     else:
-        with open(metadata_file) as f:
+        with Path(metadata_file).open() as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
     events = _load_asc_file(events_asc_file)
@@ -543,7 +543,7 @@ def edf2bids(
     if metadata_file is None:
         metadata = {}
     else:
-        with open(metadata_file) as f:
+        with metadata_file.open() as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
     events_json = BaseEventsJson(metadata)

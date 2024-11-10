@@ -68,7 +68,9 @@ class BasePhysioEventsJson(dict[str, Any]):
     ) -> None:
         """Write to json."""
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
+        with (output_dir / self.output_filename(recording=recording)).open(
+            "w"
+        ) as outfile:
             json.dump(content, outfile, indent=4)
 
 
@@ -110,7 +112,7 @@ class BaseEventsJson(dict[str, Any]):
                 self[key] = value
 
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(), "w") as outfile:
+        with (output_dir / self.output_filename()).open("w") as outfile:
             json.dump(content, outfile, indent=4)
 
 
@@ -196,5 +198,7 @@ class BasePhysioJson(dict[str, Any]):
                 self[key] = value
 
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
+        with (output_dir / self.output_filename(recording=recording)).open(
+            "w"
+        ) as outfile:
             json.dump(content, outfile, indent=4)

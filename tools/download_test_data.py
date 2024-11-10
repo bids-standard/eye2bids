@@ -25,7 +25,7 @@ output_file = output_dir / "test_data.zip"
 
 # Download the zip file
 r = requests.get(download_url, stream=True)
-with open(output_file, "wb") as f:
+with output_file.open("wb") as f:
     for chunk in r.iter_content(chunk_size=1024):
         if chunk:
             f.write(chunk)
