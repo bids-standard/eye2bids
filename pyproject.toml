@@ -136,8 +136,7 @@ ignore = [
     "D205",
     "N802",
     "N806",
-    "PD901",
-    "PLR2004"
+    "PD901"
 ]
 # List of all the ruff rules (includes why the rule matters)
 # https://docs.astral.sh/ruff/rules/
