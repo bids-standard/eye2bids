@@ -160,7 +160,6 @@ def _extract_CalibrationCount(df: pd.DataFrame, two_eyes: bool) -> int:
 
 
 def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[list[int]]]:
-
     calibration_df = df[df[2] == "VALIDATE"]
     calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
 
@@ -175,7 +174,6 @@ def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[list[int]]]:
     CalibrationPosition: Any = [[[]] * nb_calibration_postions]
 
     for i_pos in range(nb_calibration_postions):
-
         results_for_this_position = calibration_df[calibration_df[5] == i_pos]
 
         for i, calibration in enumerate(results_for_this_position.iterrows()):
@@ -463,7 +461,6 @@ def generate_physio_json(
         }
 
     if base_json.has_validation:
-
         if CalibrationPosition := _extract_CalibrationPosition(df_ms_reduced):
             base_json["CalibrationCount"] = _extract_CalibrationCount(
                 df_ms_reduced, two_eyes=base_json.two_eyes
@@ -596,7 +593,6 @@ def edf2bids(
     e2b_log.info(f"file generated: {output_filename_eye1}")
 
     if _2eyesmode(df_ms_reduced):
-
         output_filename_eye2 = generate_output_filename(
             output_dir=output_dir,
             input_file=input_file,

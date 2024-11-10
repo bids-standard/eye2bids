@@ -83,12 +83,6 @@ packages = ["eye2bids"]
 [tool.hatch.version]
 source = "vcs"
 
-[tool.isort]
-combine_as_imports = true
-line_length = 90
-profile = "black"
-skip_gitignore = true
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_any_generics = true
@@ -121,3 +115,73 @@ module = [
 addopts = "-ra --strict-config --strict-markers -q -vv --cov eye2bids --durations=0"
 norecursedirs = "data"
 testpaths = ["tests/"]
+
+[tool.ruff]
+include = ["pyproject.toml", "eye2bids/**/*.py", "tools/**/*.py"]
+indent-width = 4
+line-length = 90
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+fixable = ["ALL"]
+ignore = [
+    "PTH123",
+    "PD901",
+    "N802",
+    "D205",
+    "B028",
+    "B008",
+    "N806",
+    "SIM116",
+    "PLR2004",
+    "E721"
+]
+# List of all the ruff rules (includes why the rule matters)
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "ARG",
+    "B",
+    "C4",
+    "C90",
+    "D",
+    "E",
+    "ERA",
+    "F",
+    "FLY",
+    "I",
+    "N",
+    "NPY",
+    "PERF",
+    "PTH",
+    "PD",
+    "PLR",
+    "RUF",
+    "SIM",
+    "UP",
+    "W"
+]
+unfixable = []
+
+[tool.ruff.lint.mccabe]
+max-complexity = 41
+
+[tool.ruff.lint.per-file-ignores]
+"**/{tests}/*" = ["D100", "D103", "PLR2004"]
+"__init__.py" = ["D100", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.pylint]
+# https://docs.astral.sh/ruff/settings/#lint_pylint_max-branches
+max-branches = 17
+# https://docs.astral.sh/ruff/settings/#lint_pylint_max-statements
+max-statements = 71

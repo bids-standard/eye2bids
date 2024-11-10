@@ -292,7 +292,6 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
     assert _extract_CalibrationType(df_ms_reduced) == expected
 
 
-# ("rest", "FIXME"),
 @pytest.mark.parametrize(
     "folder, expected",
     [
