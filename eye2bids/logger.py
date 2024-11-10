@@ -6,11 +6,11 @@ import logging
 
 from rich.logging import RichHandler
 
+FORMAT = "%(message)s"
+
 
 def eye2bids_logger(log_level: str = "INFO") -> logging.Logger:
     """Create a logger for the eye2bids package."""
-    FORMAT = "%(message)s"
-
     logging.basicConfig(
         level=log_level,
         format=FORMAT,

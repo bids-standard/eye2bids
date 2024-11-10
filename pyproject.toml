@@ -133,12 +133,11 @@ skip-magic-trailing-comma = false
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 fixable = ["ALL"]
 ignore = [
-    "PD901",
-    "N802",
-    "D205",
     "B028",
-    "B008",
+    "D205",
+    "N802",
     "N806",
+    "PD901",
     "PLR2004"
 ]
 # List of all the ruff rules (includes why the rule matters)
