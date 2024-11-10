@@ -139,8 +139,7 @@ ignore = [
     "B028",
     "B008",
     "N806",
-    "PLR2004",
-    "E721"
+    "PLR2004"
 ]
 # List of all the ruff rules (includes why the rule matters)
 # https://docs.astral.sh/ruff/rules/

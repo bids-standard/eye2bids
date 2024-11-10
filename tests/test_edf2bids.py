@@ -169,7 +169,7 @@ def test_edf_end_to_end_error_no_metadata(eyelink_test_data_dir):
         edf2bids(
             input_file=input_file, metadata_file=None, output_dir=output_dir, force=False
         )
-        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.type is SystemExit
         assert pytest_wrapped_e.value.code == 1
 
 
