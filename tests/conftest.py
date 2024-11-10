@@ -16,7 +16,7 @@ def asc_test_files(input_dir: Path | None = None, suffix: str = "*") -> list[Pat
     files = input_dir.glob(f"**/{suffix}.asc")
     tmp = list(files)
     if not tmp:
-        warn(f"No .asc file found in: {input_dir}.")
+        warn(f"No .asc file found in: {input_dir}.", stacklevel=2)
     return tmp
 
 
@@ -27,7 +27,7 @@ def edf_test_files(input_dir: Path | None = None) -> list[Path]:
     edf_files = list(input_dir.glob("**/*.EDF"))
     files.extend(edf_files)
     if not files:
-        warn(f"No EDF file found in: {input_dir}")
+        warn(f"No EDF file found in: {input_dir}", stacklevel=2)
     return files
 
 

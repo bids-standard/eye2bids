@@ -133,7 +133,6 @@ skip-magic-trailing-comma = false
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 fixable = ["ALL"]
 ignore = [
-    "B028",
     "D205",
     "N802",
     "N806",
