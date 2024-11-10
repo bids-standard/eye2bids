@@ -68,15 +68,15 @@ def _check_output_content(output_dir, input_file, eye=1):
             output_dir / f"{input_file.stem}_recording-eye{eye}{ending}"
         ).with_suffix(".json")
 
-        df = pd.read_csv(tsv_file, sep="\t", header=None)
+        output = pd.read_csv(tsv_file, sep="\t", header=None)
         with json_file.open() as f:
             metadata = json.load(f)
-        assert len(df.columns) == len(metadata["Columns"])
+        assert len(output.columns) == len(metadata["Columns"])
 
         # space between timestamps should always be the same.
         if ending == "_physio":
             # length is because first row will give a nan
-            assert len(df[0].diff().unique()) == 2
+            assert len(output[0].diff().unique()) == 2
 
 
 @pytest.mark.parametrize(
@@ -226,8 +226,8 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
-    df = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
-    count = sum(i == "." for i in df[0])
+    physio = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
+    count = sum(i == "." for i in physio[0])
     assert count == 0
 
 
@@ -247,8 +247,8 @@ def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
     edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
-    df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
-    number_columns = len(df.columns)
+    physio = pd.read_csv(expected_eyetrack_tsv, sep="\t")
+    number_columns = len(physio.columns)
     assert number_columns == 4
 
 
@@ -268,8 +268,8 @@ def test_number_columns_1eye_tsv(eyelink_test_data_dir):
     edf2bids(input_file=input_file, output_dir=output_dir, force=True)
 
     expected_eyetrack_tsv = output_dir / f"{input_file.stem}_recording-eye1_physio.tsv.gz"
-    df = pd.read_csv(expected_eyetrack_tsv, sep="\t")
-    number_columns = len(df.columns)
+    physio = pd.read_csv(expected_eyetrack_tsv, sep="\t")
+    number_columns = len(physio.columns)
     assert number_columns == 4
 
 
@@ -573,8 +573,8 @@ def test_number_columns_physioevents_tsv(eyelink_test_data_dir):
     expected_physioevents_tsv = (
         output_dir / f"{input_file.stem}_recording-eye2_physioevents.tsv.gz"
     )
-    df = pd.read_csv(expected_physioevents_tsv, sep="\t")
-    number_columns = len(df.columns)
+    physioevents = pd.read_csv(expected_physioevents_tsv, sep="\t")
+    number_columns = len(physioevents.columns)
     assert number_columns == 5
 
 
@@ -632,5 +632,5 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     expected_eyetrackphysio_tsv = (
         output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
     )
-    df = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
-    assert df.iloc[3:10, 2].tolist() == expected
+    physioevents = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
+    assert physioevents.iloc[3:10, 2].tolist() == expected
