@@ -18,7 +18,6 @@ class BasePhysioEventsJson(dict[str, Any]):
     two_eyes: bool
 
     def __init__(self, metadata: None | dict[str, Any] = None) -> None:
-
         self["Columns"] = ["onset", "duration", "trial_type", "blink", "message"]
         self["Description"] = "Messages logged by the measurement device"
         self["ForeignIndexColumn"] = "timestamp"
@@ -69,9 +68,10 @@ class BasePhysioEventsJson(dict[str, Any]):
     ) -> None:
         """Write to json."""
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
+        with (output_dir / self.output_filename(recording=recording)).open(
+            "w"
+        ) as outfile:
             json.dump(content, outfile, indent=4)
-        # e2b_log.info(f"file generated: {self.output_filename(recording=recording)}")
 
 
 class BaseEventsJson(dict[str, Any]):
@@ -112,7 +112,7 @@ class BaseEventsJson(dict[str, Any]):
                 self[key] = value
 
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(), "w") as outfile:
+        with (output_dir / self.output_filename()).open("w") as outfile:
             json.dump(content, outfile, indent=4)
 
 
@@ -125,7 +125,6 @@ class BasePhysioJson(dict[str, Any]):
     has_calibration: bool
 
     def __init__(self, manufacturer: str, metadata: dict[str, Any] | None = None) -> None:
-
         self["Manufacturer"] = manufacturer
         self["PhysioType"] = "eyetrack"
 
@@ -199,5 +198,7 @@ class BasePhysioJson(dict[str, Any]):
                 self[key] = value
 
         content = {key: value for key, value in self.items() if self[key] is not None}
-        with open(output_dir / self.output_filename(recording=recording), "w") as outfile:
+        with (output_dir / self.output_filename(recording=recording)).open(
+            "w"
+        ) as outfile:
             json.dump(content, outfile, indent=4)

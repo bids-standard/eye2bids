@@ -15,14 +15,8 @@ def set_verbosity(verbosity: int | list[int]) -> None:
     """Set verbosity level."""
     if isinstance(verbosity, list):
         verbosity = verbosity[0]
-    if verbosity == 0:
-        e2b_log.setLevel("ERROR")
-    elif verbosity == 1:
-        e2b_log.setLevel("WARNING")
-    elif verbosity == 2:
-        e2b_log.setLevel("INFO")
-    elif verbosity == 3:
-        e2b_log.setLevel("DEBUG")
+    verbosity_map = {0: "ERROR", 1: "WARNING", 2: "INFO", 3: "DEBUG"}
+    e2b_log.setLevel(verbosity_map[verbosity])
 
 
 def cli(argv: Sequence[str] = sys.argv) -> None:

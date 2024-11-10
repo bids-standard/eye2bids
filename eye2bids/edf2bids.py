@@ -160,7 +160,6 @@ def _extract_CalibrationCount(df: pd.DataFrame, two_eyes: bool) -> int:
 
 
 def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[list[int]]]:
-
     calibration_df = df[df[2] == "VALIDATE"]
     calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
 
@@ -175,7 +174,6 @@ def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[list[int]]]:
     CalibrationPosition: Any = [[[]] * nb_calibration_postions]
 
     for i_pos in range(nb_calibration_postions):
-
         results_for_this_position = calibration_df[calibration_df[5] == i_pos]
 
         for i, calibration in enumerate(results_for_this_position.iterrows()):
@@ -256,12 +254,13 @@ def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
 
 def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
     eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
-    if eye == "L":
-        return "Left"
-    elif eye == "R":
-        return "Right"
-    elif eye == "LR":
-        return ["Left", "Right"]
+    recorded_eye_map: dict[str, str | list[str]] = {
+        "L": "Left",
+        "R": "Right",
+        "LR": ["Left", "Right"],
+    }
+    if eye in recorded_eye_map:
+        return recorded_eye_map[eye]
     return ""
 
 
@@ -313,7 +312,7 @@ def _extract_StopTime(events: list[str]) -> int:
 
 
 def _load_asc_file(events_asc_file: str | Path) -> list[str]:
-    with open(events_asc_file) as f:
+    with Path(events_asc_file).open() as f:
         return f.readlines()
 
 
@@ -425,7 +424,7 @@ def generate_physio_json(
     if metadata_file is None:
         metadata = {}
     else:
-        with open(metadata_file) as f:
+        with Path(metadata_file).open() as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
     events = _load_asc_file(events_asc_file)
@@ -463,7 +462,6 @@ def generate_physio_json(
         }
 
     if base_json.has_validation:
-
         if CalibrationPosition := _extract_CalibrationPosition(df_ms_reduced):
             base_json["CalibrationCount"] = _extract_CalibrationCount(
                 df_ms_reduced, two_eyes=base_json.two_eyes
@@ -545,7 +543,7 @@ def edf2bids(
     if metadata_file is None:
         metadata = {}
     else:
-        with open(metadata_file) as f:
+        with metadata_file.open() as f:
             metadata = yaml.load(f, Loader=SafeLoader)
 
     events_json = BaseEventsJson(metadata)
@@ -596,7 +594,6 @@ def edf2bids(
     e2b_log.info(f"file generated: {output_filename_eye1}")
 
     if _2eyesmode(df_ms_reduced):
-
         output_filename_eye2 = generate_output_filename(
             output_dir=output_dir,
             input_file=input_file,

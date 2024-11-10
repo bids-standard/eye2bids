@@ -19,7 +19,6 @@ def root_dir() -> Path:
 @pytest.mark.parametrize("output_dir", [data_dir() / "output", None])
 @pytest.mark.parametrize("use_relative_path", [False, True])
 def test_edf_cli(use_relative_path, output_dir, eyelink_test_data_dir):
-
     metadata_file = data_dir() / "metadata.yml"
 
     input_dir = eyelink_test_data_dir / "satf"
