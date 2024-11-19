@@ -328,8 +328,10 @@ def _load_asc_file_as_reduced_df(events_asc_file: str | Path) -> pd.DataFrame:
     return pd.DataFrame(df_ms.iloc[0:, 2:])
 
 
-def _df_events_after_start(events: list[str]) -> pd.DataFrame:
-    """Extract data between START and END messages."""
+def _df_events_from_first_start(events: list[str]) -> pd.DataFrame:
+    """Extract data starting from the first time START appears
+    and including last time END appears.
+    """
     start_index = next(
         i for i, line in enumerate(events) if re.match(r"START\s+.*", line)
     )
@@ -338,33 +340,44 @@ def _df_events_after_start(events: list[str]) -> pd.DataFrame:
     )
 
     if end_index > start_index:
-        data_lines = events[start_index + 1 : end_index]
+        data_lines = events[start_index : end_index + 1]
         return pd.DataFrame([line.strip().split("\t") for line in data_lines])
     else:
         return e2b_log.warning("No 'END' found after the selected 'START'.")
 
 
-def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:
-    events_after_start["Event_Letters"] = (
-        events_after_start[0].str.extractall(r"([A-Za-z]+)").groupby(level=0).agg("".join)
+def _df_physioevents(events_from_start: pd.DataFrame) -> pd.DataFrame:
+    events_from_start["Event_Letters"] = (
+        events_from_start[0].str.extractall(r"([A-Za-z]+)").groupby(level=0).agg("".join)
     )
-    events_after_start["Event_Numbers"] = events_after_start[0].str.extract(r"(\d+)")
-    events_after_start[["msg_timestamp", "message"]] = events_after_start[1].str.split(
+    events_from_start["Event_Numbers"] = events_from_start[0].str.extract(r"(\d+)")
+    events_from_start[["msg_timestamp", "message"]] = events_from_start[1].str.split(
         n=1, expand=True
     )
-    events_after_start["message"] = events_after_start["message"].astype(str)
+    events_from_start["message"] = events_from_start["message"].astype(str)
 
-    msg_mask = events_after_start["Event_Letters"] == "MSG"
-    events_after_start.loc[msg_mask, "Event_Numbers"] = events_after_start.loc[
+    events_from_start["message"] = np.where(
+        events_from_start["Event_Letters"] == "START",
+        "START",
+        np.where(
+            events_from_start["Event_Letters"] == "END",
+            "END",
+            events_from_start.get("message", ""),
+        ),
+    )
+
+    msg_mask = events_from_start["Event_Letters"].isin(["MSG", "START", "END"])
+    events_from_start.loc[msg_mask, "Event_Numbers"] = events_from_start.loc[
         msg_mask, "msg_timestamp"
     ]
+
     physioevents_reordered = (
         pd.concat(
             [
-                events_after_start["Event_Numbers"],
-                events_after_start[2],
-                events_after_start["Event_Letters"],
-                events_after_start["message"],
+                events_from_start["Event_Numbers"],
+                events_from_start[2],
+                events_from_start["Event_Letters"],
+                events_from_start["message"],
             ],
             axis=1,
             ignore_index=True,
@@ -378,14 +391,28 @@ def _df_physioevents(events_after_start: pd.DataFrame) -> pd.DataFrame:
 def _physioevents_for_eye(
     physioevents_reordered: pd.DataFrame, eye: str = "L"
 ) -> pd.DataFrame:
-    physioevents_eye_list = ["MSG", f"EFIX{eye}", f"ESACC{eye}", f"EBLINK{eye}"]
+    physioevents_eye_list = [
+        "MSG",
+        f"EFIX{eye}",
+        f"ESACC{eye}",
+        f"EBLINK{eye}",
+        "START",
+        "END",
+    ]
 
     physioevents = physioevents_reordered[
         physioevents_reordered["trial_type"].isin(physioevents_eye_list)
     ]
 
-    physioevents = physioevents.replace(
-        {f"EFIX{eye}": "fixation", f"ESACC{eye}": "saccade", "MSG": np.nan, None: np.nan}
+    physioevents["trial_type"] = physioevents["trial_type"].replace(
+        {
+            f"EFIX{eye}": "fixation",
+            f"ESACC{eye}": "saccade",
+            "MSG": np.nan,
+            "START": np.nan,
+            "END": np.nan,
+            None: np.nan,
+        }
     )
 
     physioevents["blink"] = 0
@@ -406,6 +433,7 @@ def _physioevents_for_eye(
     physioevents = physioevents[physioevents.trial_type != f"EBLINK{eye}"]
 
     physioevents["timestamp"] = physioevents["timestamp"].astype("Int64")
+    physioevents["duration"] = pd.to_numeric(physioevents["duration"], errors="coerce")
     physioevents["duration"] = physioevents["duration"].astype("Int64")
 
     physioevents = physioevents[
@@ -610,8 +638,8 @@ def edf2bids(
     # %%
     # Messages and events to dataframes
 
-    events_after_start = _df_events_after_start(events)
-    physioevents_reordered = _df_physioevents(events_after_start)
+    events_from_start = _df_events_from_first_start(events)
+    physioevents_reordered = _df_physioevents(events_from_start)
     physioevents_eye1 = _physioevents_for_eye(physioevents_reordered, eye="L")
     physioevents_eye2 = _physioevents_for_eye(physioevents_reordered, eye="R")
 
