@@ -10,18 +10,18 @@
 SampleCoordinateUnits: str
 SampleCoordinateSystem: str
 EnvironmentCoordinates: str
-ScreenDistance: float # or express as X,Y,Z coordinates, e.g. [0.05, 0.30, 0.40]
-ScreenRefreshRate: int
-ScreenSize: [float]
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
 SoftwareVersion: str
+ScreenRefreshRate: int
+ScreenSize: [float]
 ScreenAOIDefinition: [str, [int]]
 EyeCameraSettings:
+ScreenDistance: float # or express as X,Y,Z coordinates, e.g. [0.05, 0.30, 0.40]
 EyeTrackerDistance: float # or express as X,Y,Z coordinates, e.g. [0.05, 0.30, 0.40]
 FeatureDetectionSettings:
 GazeMappingSettings:
-RawDataFilters:
+RawDataFilters: str
 InstitutionName: str
 InstitutionAddress: str
 TaskName: str
