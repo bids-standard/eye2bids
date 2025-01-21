@@ -4,24 +4,22 @@
 # https://bids-specification--1128.org.readthedocs.build/en/1128/modality-specific-files/eye-tracking.html
 # Please go through the specification
 # and fill the fields below according to the data types given in the specification.
-# !Note that ScreenSize and EyeTrackerDistance units are in meter, not centimeter!
 
 # REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
-SampleCoordinateUnits: str
-SampleCoordinateSystem: str
-EnvironmentCoordinates: str
-ScreenDistance: int
-ScreenRefreshRate: int
-ScreenSize: [float]
+SampleCoordinateUnits: pixel
+SampleCoordinateSystem: gaze-on-screen
+EnvironmentCoordinates: top-left
+ScreenDistance: 0.6
+ScreenRefreshRate: 60
+ScreenSize: [0.386, 0.29]
 
 # Recommended (leave empty if not available but put information you want to share with your dataset here!):
-SoftwareVersion: str
-ScreenAOIDefinition: [str, [int]]
+SoftwareVersion: SREB1.10.1630 WIN32 LID:F2AE011 Mod:2017.04.21 15:19 CEST
+ScreenAOIDefinition: [square, [00, 150, 300, 350]]
 EyeCameraSettings:
-EyeTrackerDistance: float
+EyeTrackerDistance:
 FeatureDetectionSettings:
 GazeMappingSettings:
 RawDataFilters:
-InstitutionName: str
-InstitutionAddress: str
-TaskName: str
+InstitutionName: Philipps-University Marburg
+InstitutionAddress: Gutenbergstr. 18

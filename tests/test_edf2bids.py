@@ -89,7 +89,7 @@ def _check_output_content(output_dir, input_file, eye=1):
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end_all(eyelink_test_data_dir, folder):
     """Run conversion of all test datasets and check output."""
-    metadata_file = data_dir() / "metadata.yml"
+    metadata_file = data_dir() / "eyelink_metadata.yml"
 
     input_dir = eyelink_test_data_dir / folder
     input_file = edf_test_files(input_dir=input_dir)[0]
@@ -111,7 +111,7 @@ def test_edf_end_to_end_all(eyelink_test_data_dir, folder):
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end_emg_xfail(eyelink_test_data_dir, folder):
     """Run conversion of all test datasets and check output."""
-    metadata_file = data_dir() / "metadata.yml"
+    metadata_file = data_dir() / "eyelink_metadata.yml"
 
     input_dir = eyelink_test_data_dir / folder
     input_file = edf_test_files(input_dir=input_dir)[0]
@@ -128,7 +128,7 @@ def test_edf_end_to_end_emg_xfail(eyelink_test_data_dir, folder):
 @pytest.mark.xfail(reason="Output is not a continuous recording. See #69.")
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end(eyelink_test_data_dir):
-    metadata_file = data_dir() / "metadata.yml"
+    metadata_file = data_dir() / "eyelink_metadata.yml"
 
     input_dir = eyelink_test_data_dir / "satf"
     input_file = edf_test_files(input_dir=input_dir)[0]
@@ -175,7 +175,7 @@ def test_edf_end_to_end_error_no_metadata(eyelink_test_data_dir):
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
-    metadata_file = data_dir() / "metadata.yml"
+    metadata_file = data_dir() / "eyelink_metadata.yml"
 
     input_dir = eyelink_test_data_dir / "2eyes"
     input_file = edf_test_files(input_dir=input_dir)[0]
