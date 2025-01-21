@@ -221,11 +221,11 @@ def _has_validation(df: pd.DataFrame) -> bool:
 
 
 def _extract_MaximalCalibrationError(df: pd.DataFrame) -> list[float]:
-    return np.array(_validations(df)[[11]]).astype(float).tolist()
+    return ((_validations(df)[[11]]).astype(float)).to_numpy().tolist()
 
 
 def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
-    return np.array(_validations(df)[[9]]).astype(float).tolist()
+    return ((_validations(df)[[9]]).astype(float)).to_numpy().tolist()
 
 
 def _extract_ManufacturersModelName(events: list[str]) -> str:
@@ -276,11 +276,9 @@ def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
 
 
 def _extract_StartTime(events: list[str]) -> int:
-    StartTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
+    StartTime = np.array(
+        pd.DataFrame([st.split() for st in events if st.startswith("START")])[1]
+    ).astype(int)
     if len(StartTime) > 1:
         e2b_log.info(
             """Your input file contains multiple start times.\n
@@ -293,11 +291,9 @@ def _extract_StartTime(events: list[str]) -> int:
 
 
 def _extract_StopTime(events: list[str]) -> int:
-    StopTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
-        .astype(int)
-        .tolist()
-    )
+    StopTime = np.array(
+        pd.DataFrame([st.split() for st in events if st.startswith("START")])[1]
+    ).astype(int)
     if len(StopTime) > 1:
         e2b_log.info(
             """Your input file contains multiple stop times.\n
