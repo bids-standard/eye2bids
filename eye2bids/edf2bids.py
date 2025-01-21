@@ -289,13 +289,12 @@ def _extract_StartTime(events: list[str]) -> int:
              Please consider changing your code accordingly
              for future eyetracking experiments.\n"""
         )
-        return StartTime[0]
-    return StartTime
+    return StartTime[0]
 
 
 def _extract_StopTime(events: list[str]) -> int:
     StopTime = (
-        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
+        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
         .astype(int)
         .tolist()
     )
@@ -307,8 +306,7 @@ def _extract_StopTime(events: list[str]) -> int:
              Please consider changing your code accordingly
              for future eyetracking experiments.\n"""
         )
-        return StopTime[-1]
-    return StopTime
+    return StopTime[-1]
 
 
 def _load_asc_file(events_asc_file: str | Path) -> list[str]:
