@@ -294,7 +294,7 @@ def _extract_StartTime(events: list[str]) -> int:
 
 def _extract_StopTime(events: list[str]) -> int:
     StopTime = (
-        np.array(pd.DataFrame([st.split() for st in events if st.startswith("START")])[1])
+        np.array(pd.DataFrame([so.split() for so in events if so.startswith("END")])[1])
         .astype(int)
         .tolist()
     )
