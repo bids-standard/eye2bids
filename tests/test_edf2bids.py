@@ -633,4 +633,4 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
         output_dir / f"{input_file.stem}_recording-eye1_physioevents.tsv.gz"
     )
     physioevents = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
-    assert physioevents.iloc[3:10, 2].tolist() == expected
+    assert physioevents.iloc[4:11, 2].tolist() == expected
