@@ -87,6 +87,7 @@ class BaseEventsJson(dict[str, Any]):
         if metadata is None:
             return None
 
+        self["EnvironmentCoordinates"] = metadata.get("EnvironmentCoordinates")
         self["TaskName"] = metadata.get("TaskName")
         self["InstitutionAddress"] = metadata.get("InstitutionAddress")
         self["InstitutionName"] = metadata.get("InstitutionName")
@@ -168,7 +169,6 @@ class BasePhysioJson(dict[str, Any]):
         if metadata is None:
             return None
 
-        self["EnvironmentCoordinates"] = metadata.get("EnvironmentCoordinates")
         self["SoftwareVersion"] = metadata.get("SoftwareVersion")
         self["EyeCameraSettings"] = metadata.get("EyeCameraSettings")
         self["EyeTrackerDistance"] = metadata.get("EyeTrackerDistance")
