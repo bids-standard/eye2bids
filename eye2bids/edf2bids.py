@@ -543,8 +543,7 @@ def edf2bids(
 
     if not events_asc_file.exists():
         e2b_log.error(
-            "The following .edf input file could not be converted to .asc:"
-            f"{input_file}"
+            f"The following .edf input file could not be converted to .asc:{input_file}"
         )
 
     # SIDECARS #
@@ -590,8 +589,7 @@ def edf2bids(
     samples_asc_file = _convert_edf_to_asc_samples(input_file)
     if not samples_asc_file.exists():
         e2b_log.error(
-            "The following .edf input file could not be converted to .asc:"
-            f"{input_file}"
+            f"The following .edf input file could not be converted to .asc:{input_file}"
         )
 
     samples = pd.read_csv(samples_asc_file, sep="\t", header=None)
