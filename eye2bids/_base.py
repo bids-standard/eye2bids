@@ -110,8 +110,6 @@ class BasePhysioJson(dict[str, Any]):
     has_calibration: bool
 
     def __init__(self, manufacturer: str, metadata: dict[str, Any] | None = None) -> None:
-        self.update_from_metadata(metadata)
-
         self["Manufacturer"] = manufacturer
         self["PhysioType"] = "eyetrack"
 
@@ -126,7 +124,7 @@ class BasePhysioJson(dict[str, Any]):
             "Origin": ("System startup"),
         }
 
-        units = self["Units"]
+        units = metadata.get("Units") if metadata else None
 
         self["x_coordinate"] = {
             "LongName": ("Gaze position (x)"),
@@ -155,12 +153,13 @@ class BasePhysioJson(dict[str, Any]):
             "Units": "a.u.",
         }
 
+        self.update_from_metadata(metadata)
+
     def update_from_metadata(self, metadata: None | dict[str, Any] = None) -> None:
         """Update content of json side car based on metadata."""
         if metadata is None:
             return None
 
-        self["Units"] = metadata.get("Units")
         self["SoftwareVersion"] = metadata.get("SoftwareVersion")
         self["EyeCameraSettings"] = metadata.get("EyeCameraSettings")
         self["EyeTrackerDistance"] = metadata.get("EyeTrackerDistance")
