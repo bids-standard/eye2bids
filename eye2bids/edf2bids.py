@@ -6,7 +6,6 @@ import gzip
 import re
 import subprocess
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -157,47 +156,6 @@ def _extract_CalibrationType(df: pd.DataFrame) -> list[int]:
 
 def _extract_CalibrationCount(df: pd.DataFrame, two_eyes: bool) -> int:
     return len(_calibrations(df)) // 2 if two_eyes else len(_calibrations(df))
-
-
-def _extract_CalibrationPosition(df: pd.DataFrame) -> list[list[list[int]]]:
-    calibration_df = df[df[2] == "VALIDATE"]
-    calibration_df[5] = pd.to_numeric(calibration_df[5], errors="coerce")
-
-    if _2eyesmode(df):
-        # drop duplicated calibration position
-        # because they will be the same for both eyes
-        calibration_df = calibration_df[calibration_df[6] == "LEFT"]
-
-    nb_calibration_postions = calibration_df[5].max() + 1
-
-    # initialize
-    CalibrationPosition: Any = [[[]] * nb_calibration_postions]
-
-    for i_pos in range(nb_calibration_postions):
-        results_for_this_position = calibration_df[calibration_df[5] == i_pos]
-
-        for i, calibration in enumerate(results_for_this_position.iterrows()):
-            values = calibration[1][8].split(",")
-
-            if len(CalibrationPosition) < i + 1:
-                CalibrationPosition.append([[]] * nb_calibration_postions)
-
-            CalibrationPosition[i][i_pos] = [int(x) for x in values]
-
-    return CalibrationPosition
-
-
-def _extract_CalibrationUnit(df: pd.DataFrame) -> str:
-    cal_unit = (
-        (df[df[2] == "VALIDATE"][[13]])
-        .iloc[0:1, 0:1]
-        .to_string(header=False, index=False)
-    )
-    if cal_unit == "pix.":
-        return "pixel"
-    elif cal_unit in ["cm", "mm"]:
-        return cal_unit
-    return ""
 
 
 def _extract_EyeTrackingMethod(events: list[str]) -> str:
@@ -475,6 +433,11 @@ def generate_physio_json(
     if base_json.has_calibration:
         base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
 
+        base_json["CalibrationCount"] = _extract_CalibrationCount(
+            df_ms_reduced, two_eyes=base_json.two_eyes
+        )
+        base_json["CalibrationType"] = _extract_CalibrationType(df_ms_reduced)
+
     if base_json.two_eyes:
         metadata_eye1: dict[str, str | list[str] | list[float]] = {
             "RecordedEye": (_extract_RecordedEye(df_ms_reduced)[0]),
@@ -488,17 +451,6 @@ def generate_physio_json(
         }
 
     if base_json.has_validation:
-        if CalibrationPosition := _extract_CalibrationPosition(df_ms_reduced):
-            base_json["CalibrationCount"] = _extract_CalibrationCount(
-                df_ms_reduced, two_eyes=base_json.two_eyes
-            )
-            base_json["CalibrationUnit"] = _extract_CalibrationUnit(df_ms_reduced)
-            base_json["CalibrationType"] = _extract_CalibrationType(df_ms_reduced)
-
-            base_json["CalibrationPosition"] = CalibrationPosition
-            if base_json["CalibrationCount"] == 1:
-                base_json["CalibrationPosition"] = CalibrationPosition[0]
-
         metadata_eye1["AverageCalibrationError"] = _extract_AverageCalibrationError(
             df_ms
         )[::2]

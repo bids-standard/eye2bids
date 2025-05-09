@@ -7,11 +7,12 @@
 # !Note that ScreenSize and EyeTrackerDistance units are in meter, not centimeter!
 
 # REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
-SampleCoordinateUnits: str
 SampleCoordinateSystem: str
 EnvironmentCoordinates: str
+Units: str
 
-# Recommended (leave empty if not available but put information you want to share with your dataset here!):
+# Recommended or optional (leave empty if not available but put information you want to share with your dataset here!):
+CalibrationPosition: [[int, int]]
 SoftwareVersion: str
 ScreenRefreshRate: int
 ScreenSize: [float]
