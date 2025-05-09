@@ -52,10 +52,10 @@ pip install .
 ### Run code
 
 ```bash
-eye2bids --input_file INPUT_FILE
+eye2bids --input_file INPUT_FILE --metadata_file METADATA_FILE
 ```
 
-    Usage: eye2bids [-h] [-v] --input_file INPUT_FILE [--metadata_file METADATA_FILE] [--output_dir OUTPUT_DIR] [-i] [--verbosity {0,1,2,3}]
+    Usage: eye2bids [-h] [-v] --input_file INPUT_FILE --metadata_file METADATA_FILE [--output_dir OUTPUT_DIR] [-i] [--verbosity {0,1,2,3}]
                     [--input_type INPUT_TYPE]
 
     Converts eyetracking data to a BIDS compatible format.

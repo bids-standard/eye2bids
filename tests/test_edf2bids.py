@@ -10,9 +10,7 @@ from eye2bids.edf2bids import (
     _check_edf2asc_present,
     _convert_edf_to_asc_events,
     _extract_AverageCalibrationError,
-    _extract_CalibrationPosition,
     _extract_CalibrationType,
-    _extract_CalibrationUnit,
     _extract_DeviceSerialNumber,
     _extract_EyeTrackingMethod,
     _extract_ManufacturersModelName,
@@ -308,100 +306,6 @@ def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
     asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_ScreenResolution(df_ms_reduced) == expected
-
-
-@pytest.mark.parametrize(
-    "folder, expected",
-    [
-        ("lt", "pixel"),
-        ("rest", "pixel"),
-        ("2eyes", "pixel"),
-    ],
-)
-def test_extract_CalibrationUnit(folder, expected, eyelink_test_data_dir):
-    input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
-    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
-    assert _extract_CalibrationUnit(df_ms_reduced) == expected
-
-
-@pytest.mark.parametrize(
-    "folder, expected",
-    [
-        (
-            "lt",
-            [
-                [
-                    [960, 540],
-                    [960, 324],
-                    [960, 755],
-                    [576, 540],
-                    [1343, 540],
-                    [622, 350],
-                    [1297, 350],
-                    [622, 729],
-                    [1297, 729],
-                ],
-                [
-                    [960, 540],
-                    [960, 324],
-                    [960, 755],
-                    [576, 540],
-                    [1343, 540],
-                    [622, 350],
-                    [1297, 350],
-                    [622, 729],
-                    [1297, 729],
-                ],
-            ],
-        ),
-        (
-            "rest",
-            [
-                [
-                    [960, 540],
-                    [960, 732],
-                    [1126, 444],
-                    [576, 540],
-                    [1344, 540],
-                    [768, 873],
-                    [1152, 873],
-                    [768, 207],
-                    [1152, 207],
-                    [794, 636],
-                    [1126, 636],
-                    [794, 444],
-                    [960, 348],
-                ],
-            ],
-        ),
-        (
-            "2eyes",
-            [
-                [
-                    [960, 540],
-                    [960, 732],
-                    [1126, 444],
-                    [576, 540],
-                    [1344, 540],
-                    [768, 873],
-                    [1152, 873],
-                    [768, 207],
-                    [1152, 207],
-                    [794, 636],
-                    [1126, 636],
-                    [794, 444],
-                    [960, 348],
-                ],
-            ],
-        ),
-    ],
-)
-def test_extract_CalibrationPosition(folder, expected, eyelink_test_data_dir):
-    input_dir = eyelink_test_data_dir / folder
-    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
-    df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
-    assert _extract_CalibrationPosition(df_ms_reduced) == expected
 
 
 @pytest.mark.parametrize(
