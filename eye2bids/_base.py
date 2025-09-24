@@ -71,12 +71,12 @@ class BaseEventsJson(dict[str, Any]):
         if metadata is None:
             return None
 
-        self["EnvironmentCoordinates"] = metadata.get("EnvironmentCoordinates")
         self["TaskName"] = metadata.get("TaskName")
         self["InstitutionAddress"] = metadata.get("InstitutionAddress")
         self["InstitutionName"] = metadata.get("InstitutionName")
         self["StimulusPresentation"] = {
             "ScreenDistance": metadata.get("ScreenDistance"),
+            "ScreenOrigin": metadata.get("ScreenOrigin"),
             "ScreenRefreshRate": metadata.get("ScreenRefreshRate"),
             "ScreenSize": metadata.get("ScreenSize"),
         }

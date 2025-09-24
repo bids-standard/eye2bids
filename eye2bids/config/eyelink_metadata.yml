@@ -8,7 +8,7 @@
 
 # REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
 SampleCoordinateSystem: str
-EnvironmentCoordinates: str
+ScreenOrigin: [str, str]
 Units: str
 
 # Recommended or optional (leave empty if not available but put information you want to share with your dataset here!):
