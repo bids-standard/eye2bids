@@ -29,20 +29,20 @@ repos:
         args: [--mapping, '4', --sequence, '4', --offset, '0']
 
 -   repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.15.0
+    rev: v2.16.0
     hooks:
     -   id: pretty-format-toml
         args: [--autofix, --indent, '4']
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.0
+    rev: v1.19.1
     hooks:
     -   id: mypy
         additional_dependencies: [types-requests, types-PyYAML, numpy]
         args: [--config-file=pyproject.toml]
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.8
+    rev: v0.15.2
     hooks:
     # Run the linter.
     -   id: ruff
