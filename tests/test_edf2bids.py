@@ -19,6 +19,7 @@ from eye2bids.edf2bids import (
     _extract_RecordedEye,
     _extract_SamplingFrequency,
     _extract_ScreenResolution,
+    _extract_StartTime,
     _load_asc_file,
     _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
@@ -538,3 +539,22 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     )
     physioevents = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
     assert physioevents.iloc[4:11, 2].tolist() == expected
+
+
+@pytest.mark.parametrize(
+    "folder, expected",
+    [
+        ("emg", 0),
+        ("lt", 0),
+        ("pitracker", 0),
+        ("rest", -45.446),
+        ("satf", 0),
+        ("vergence", 0),
+        ("2eyes", 0),
+    ],
+)
+def test_extract_StartTime(folder, expected, eyelink_test_data_dir):
+    input_dir = eyelink_test_data_dir / folder
+    asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
+    df_ms = _load_asc_file_as_df(asc_file)
+    assert _extract_StartTime(df_ms) == expected
