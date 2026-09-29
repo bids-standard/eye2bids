@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from eye2bids.edf2bids import (
+    _2eyesmode,
     _check_edf2asc_present,
     _convert_edf_to_asc_events,
     _extract_AverageCalibrationError,
@@ -538,3 +539,20 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     )
     physioevents = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
     assert physioevents.iloc[4:11, 2].tolist() == expected
+
+
+@pytest.mark.parametrize(
+    "reccfg, expected_eye, expected_two_eyes",
+    [
+        ("MSG 1 RECCFG CR 1000 2 1 L", "Left", False),
+        ("MSG 1 RECCFG CR 1000 2 1 R", "Right", False),
+        ("MSG 1 RECCFG CR 1000 2 1 LR", ["Left", "Right"], True),
+        # EyeLink 1000 Plus remote mode adds extra fields before the eye
+        ("MSG 1 RECCFG CR 500 2 2 2 2 R", "Right", False),
+    ],
+)
+def test_recorded_eye_from_reccfg(reccfg, expected_eye, expected_two_eyes):
+    lines = [reccfg, "MSG 1 GAZE_COORDS 0.00 0.00 1919.00 1079.00"]
+    df = pd.DataFrame([line.split() for line in lines]).iloc[:, 2:]
+    assert _extract_RecordedEye(df) == expected_eye
+    assert _2eyesmode(df) == expected_two_eyes
