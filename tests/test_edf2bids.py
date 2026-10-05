@@ -233,6 +233,23 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+@pytest.mark.parametrize("recording", ["eye1", "eye2"])
+def test_edf_nan_in_tsv_2eyes(recording, eyelink_test_data_dir):
+    """Check that EyeLink's missing-data dots are written as n/a for both eyes."""
+    input_dir = eyelink_test_data_dir / "2eyes"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
+
+    tsv = output_dir / f"{input_file.stem}_recording-{recording}_physio.tsv.gz"
+    physio = pd.read_csv(tsv, sep="\t", header=None, dtype=str, keep_default_na=False)
+    assert not (physio.apply(lambda col: col.str.strip()) == ".").any().any()
+
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
 def test_number_columns_2eyes_tsv(eyelink_test_data_dir):
     """Check that values for only one eye were extracted \
        in eye1-physio.tsv.gz by number of columns.

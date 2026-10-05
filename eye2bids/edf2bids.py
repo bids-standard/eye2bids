@@ -701,7 +701,11 @@ def edf2bids(
     _write_samples_tsv(samples_eye1, output_dir, input_file, recording="eye1")
 
     if _2eyesmode(df_ms_reduced):
-        samples_eye2 = pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
+        samples_eye2 = (
+            pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
+            .map(lambda x: x.strip() if isinstance(x, str) else x)
+            .replace(".", np.nan, regex=False)
+        )
         samples_eye2 = pd.concat([samples_eye2, target], axis=1)
         _write_samples_tsv(samples_eye2, output_dir, input_file, recording="eye2")
 
