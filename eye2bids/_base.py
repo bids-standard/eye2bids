@@ -101,6 +101,54 @@ class BaseEventsJson(dict[str, Any]):
             json.dump(content, outfile, indent=4)
 
 
+# Extra columns written to _physio.tsv.gz for EyeLink Remote-mode recordings,
+# where the tracker follows a target sticker on the participant's forehead.
+REMOTE_TARGET_COLUMNS: dict[str, dict[str, Any]] = {
+    "target_x": {
+        "LongName": "Target sticker position (x)",
+        "Description": (
+            "Horizontal position of the head-tracking target sticker "
+            "in eye-tracker camera image coordinates (0-10000). "
+            "n/a when the target is missing."
+        ),
+        "Units": "a.u.",
+    },
+    "target_y": {
+        "LongName": "Target sticker position (y)",
+        "Description": (
+            "Vertical position of the head-tracking target sticker "
+            "in eye-tracker camera image coordinates (0-10000). "
+            "n/a when the target is missing."
+        ),
+        "Units": "a.u.",
+    },
+    "target_distance": {
+        "LongName": "Target sticker distance",
+        "Description": (
+            "Distance between the target sticker and the eye-tracker camera. "
+            "n/a when the target is missing."
+        ),
+        "Units": "mm",
+    },
+    "target_flags": {
+        "LongName": "Target and eye status flags",
+        "Description": (
+            "Bitmask of the EyeLink Remote-mode warning flags for this sample; "
+            "0 means no warnings. Bit k is set when character k of EyeLink's "
+            "status string is not '.'. "
+            "Bit 0: target missing (M); 1: extreme target angle (A); "
+            "2: target near eye, windows overlap (N); 3: target too close (C); "
+            "4: target too far (F); 5-8: target near top/bottom/left/right "
+            "edge of the camera image (T, B, L, R); 9-12: eye near "
+            "top/bottom/left/right edge of the camera image (T, B, L, R). "
+            "Binocular recordings have four more bits (13-16): bits 9-12 "
+            "then refer to the left eye and 13-16 to the right eye."
+        ),
+        "Units": "n/a",
+    },
+}
+
+
 class BasePhysioJson(dict[str, Any]):
     """Handle content of physio sidedar."""
 
