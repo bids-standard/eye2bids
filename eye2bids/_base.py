@@ -63,10 +63,10 @@ class BaseEventsJson(dict[str, Any]):
 
     input_file: Path
 
-    def __init__(self, metadata: None | dict[str, Any] = None) -> None:
+    def __init__(self, metadata: dict[str, Any] | None = None) -> None:
         self.update_from_metadata(metadata)
 
-    def update_from_metadata(self, metadata: None | dict[str, Any] = None) -> None:
+    def update_from_metadata(self, metadata: dict[str, Any] | None = None) -> None:
         """Update content of json side car based on metadata."""
         if metadata is None:
             return None
@@ -155,7 +155,7 @@ class BasePhysioJson(dict[str, Any]):
 
         self.update_from_metadata(metadata)
 
-    def update_from_metadata(self, metadata: None | dict[str, Any] = None) -> None:
+    def update_from_metadata(self, metadata: dict[str, Any] | None = None) -> None:
         """Update content of json side car based on metadata."""
         if metadata is None:
             return None
