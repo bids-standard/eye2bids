@@ -7,6 +7,8 @@ import pandas as pd
 import pytest
 
 from eye2bids.edf2bids import (
+    _2eyesmode,
+    _add_target_columns_to_physio_json,
     _check_edf2asc_present,
     _convert_edf_to_asc_events,
     _extract_AverageCalibrationError,
@@ -19,6 +21,7 @@ from eye2bids.edf2bids import (
     _extract_RecordedEye,
     _extract_SamplingFrequency,
     _extract_ScreenResolution,
+    _extract_target_columns,
     _load_asc_file,
     _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
@@ -227,6 +230,23 @@ def test_edf_nan_in_tsv(eyelink_test_data_dir):
     physio = pd.read_csv(expected_eyetrack_tsv, sep="\t", header=None)
     count = sum(i == "." for i in physio[0])
     assert count == 0
+
+
+@pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
+@pytest.mark.parametrize("recording", ["eye1", "eye2"])
+def test_edf_nan_in_tsv_2eyes(recording, eyelink_test_data_dir):
+    """Check that EyeLink's missing-data dots are written as n/a for both eyes."""
+    input_dir = eyelink_test_data_dir / "2eyes"
+    input_file = edf_test_files(input_dir=input_dir)[0]
+
+    output_dir = data_dir() / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    edf2bids(input_file=input_file, output_dir=output_dir, force=True)
+
+    tsv = output_dir / f"{input_file.stem}_recording-{recording}_physio.tsv.gz"
+    physio = pd.read_csv(tsv, sep="\t", header=None, dtype=str, keep_default_na=False)
+    assert not (physio.apply(lambda col: col.str.strip()) == ".").any().any()
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -538,3 +558,99 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     )
     physioevents = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
     assert physioevents.iloc[4:11, 2].tolist() == expected
+
+
+@pytest.mark.parametrize(
+    "reccfg, expected_eye, expected_two_eyes",
+    [
+        ("MSG 1 RECCFG CR 1000 2 1 L", "Left", False),
+        ("MSG 1 RECCFG CR 1000 2 1 R", "Right", False),
+        ("MSG 1 RECCFG CR 1000 2 1 LR", ["Left", "Right"], True),
+        # EyeLink 1000 Plus remote mode adds extra fields before the eye
+        ("MSG 1 RECCFG CR 500 2 2 2 2 R", "Right", False),
+    ],
+)
+def test_recorded_eye_from_reccfg(reccfg, expected_eye, expected_two_eyes):
+    lines = [reccfg, "MSG 1 GAZE_COORDS 0.00 0.00 1919.00 1079.00"]
+    df = pd.DataFrame([line.split() for line in lines]).iloc[:, 2:]
+    assert _extract_RecordedEye(df) == expected_eye
+    assert _2eyesmode(df) == expected_two_eyes
+
+
+def _samples_from_lines(lines):
+    """Parse sample lines the same way edf2bids reads the samples .asc file."""
+    from io import StringIO
+
+    return pd.read_csv(StringIO("\n".join(lines)), sep="\t", header=None)
+
+
+@pytest.mark.parametrize("sep", ["\t", " "])
+def test_extract_target_columns_remote(sep):
+    lines = [
+        "1000\t965.1\t544.2\t546.0\t..."
+        + "\t"
+        + sep.join(["4562.0", "3876.0", "604.4", "............."]),
+        "1002\t.\t.\t0.0\t..."
+        + "\t"
+        + sep.join(["-32768", "-32768", "-32768", "M............"]),
+        "1004\t963.8\t546.3\t546.0\t..."
+        + "\t"
+        + sep.join(["4570.0", "3880.0", "605.1", ".....T......R"]),
+    ]
+    target = _extract_target_columns(_samples_from_lines(lines))
+
+    assert list(target.columns) == [
+        "target_x",
+        "target_y",
+        "target_distance",
+        "target_flags",
+    ]
+    assert target.loc[0, "target_x"] == 4562.0
+    assert target.loc[0, "target_distance"] == 604.4
+    assert target.loc[0, "target_flags"] == 0
+    # missing target: values become NaN, bit 0 (M) is set
+    assert target.loc[1, ["target_x", "target_y", "target_distance"]].isna().all()
+    assert target.loc[1, "target_flags"] == 1
+    # T (bit 5) and R (bit 12)
+    assert target.loc[2, "target_flags"] == (1 << 5) + (1 << 12)
+
+
+def test_extract_target_columns_not_remote():
+    lines = ["1000\t965.1\t544.2\t546.0\t...", "1002\t963.8\t546.3\t546.0\t..."]
+    assert _extract_target_columns(_samples_from_lines(lines)) is None
+
+
+def test_add_target_columns_to_physio_json(tmp_path):
+    json_file = tmp_path / "sub-01_recording-eye1_physio.json"
+    json_file.write_text(
+        json.dumps(
+            {"Columns": ["timestamp", "x_coordinate", "y_coordinate", "pupil_size"]}
+        )
+    )
+    _add_target_columns_to_physio_json(json_file)
+    content = json.loads(json_file.read_text())
+
+    assert content["Columns"][4:] == [
+        "target_x",
+        "target_y",
+        "target_distance",
+        "target_flags",
+    ]
+    assert content["target_distance"]["Units"] == "mm"
+
+
+def test_extract_target_columns_distance_and_flags_share_a_column():
+    """Layout from an EyeLink 1000 Plus OPM-mount Remote-mode recording."""
+    lines = [
+        "6245341\t  965.1\t  544.2\t  546.0\t... "
+        "\t 4081.0\t 3949.0\t  610.9 .............",
+        "6245343\t  963.8\t  546.3\t  546.0\t... "
+        "\t 4081.0\t 3949.0\t  610.9 M............",
+    ]
+    target = _extract_target_columns(_samples_from_lines(lines))
+
+    assert target.loc[0, "target_x"] == 4081.0
+    assert target.loc[0, "target_y"] == 3949.0
+    assert target.loc[0, "target_distance"] == 610.9
+    assert target.loc[0, "target_flags"] == 0
+    assert target.loc[1, "target_flags"] == 1

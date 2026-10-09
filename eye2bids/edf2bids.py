@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import json
 import re
 import subprocess
 from pathlib import Path
@@ -13,7 +14,12 @@ import yaml
 from rich.prompt import Prompt
 from yaml.loader import SafeLoader
 
-from eye2bids._base import BaseEventsJson, BasePhysioEventsJson, BasePhysioJson
+from eye2bids._base import (
+    REMOTE_TARGET_COLUMNS,
+    BaseEventsJson,
+    BasePhysioEventsJson,
+    BasePhysioJson,
+)
 from eye2bids._parser import global_parser
 from eye2bids.logger import eye2bids_logger
 
@@ -136,8 +142,16 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
     return Path(samples_asc_file).with_suffix(".asc")
 
 
+def _reccfg_eye(df: pd.DataFrame) -> str:
+    """Return the eye token (L, R or LR): the last field of the first RECCFG message."""
+    row = df[df[2] == "RECCFG"]
+    if row.empty:
+        return ""
+    return str(row.iloc[0].dropna().iloc[-1])
+
+
 def _2eyesmode(df: pd.DataFrame) -> bool:
-    eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
+    eye = _reccfg_eye(df)
     two_eyes = eye == "LR"
     return two_eyes
 
@@ -211,7 +225,7 @@ def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
 
 
 def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
-    eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
+    eye = _reccfg_eye(df)
     recorded_eye_map: dict[str, str | list[str]] = {
         "L": "Left",
         "R": "Right",
@@ -265,6 +279,132 @@ def _extract_StopTime(events: list[str]) -> int:
              for future eyetracking experiments.\n"""
         )
     return StopTime[-1]
+
+
+EYELINK_MISSING_DATA = -32768
+N_GAZE_COLUMNS = 4  # timestamp, x, y, pupil
+N_TARGET_FIELDS = 4  # target x, target y, target distance, status flags
+TARGET_FLAGS_PATTERN = r"[.A-Z]{13}(?:[.A-Z]{4})?"
+
+
+def _join_columns(df: pd.DataFrame) -> pd.Series:
+    """Join a dataframe's columns into one space-separated string per row."""
+    joined = df.iloc[:, 0].fillna("").astype(str)
+    for col in df.columns[1:]:
+        joined = joined + " " + df[col].fillna("").astype(str)
+    return joined
+
+
+def _extract_target_columns(samples: pd.DataFrame) -> pd.DataFrame | None:
+    """Extract Remote-mode target sticker data from the samples dataframe.
+
+    In Remote mode, each sample line ends with:
+    <target x> <target y> <target distance> <status flags>
+    where the flags are a 13-character string (17 for binocular data),
+    "." meaning no warning. Return None if the samples have no target data.
+    """
+    extra = samples.iloc[:, N_GAZE_COLUMNS:].dropna(axis=1, how="all")
+    if extra.shape[1] == 0:
+        return None
+
+    last = extra.iloc[:, -1].astype(str).str.strip()
+    probe = last.iloc[:1000]  # check the first lines first, so other files stay fast
+
+    if (
+        extra.shape[1] >= N_TARGET_FIELDS
+        and probe.str.fullmatch(TARGET_FLAGS_PATTERN).any()
+    ):
+        # Each field in its own tab-separated column.
+        target = extra.iloc[:, -N_TARGET_FIELDS:].astype(str)
+        target = target.apply(lambda col: col.str.strip())
+    elif (
+        extra.shape[1] >= N_TARGET_FIELDS - 1
+        and probe.str.fullmatch(rf"\S+\s+{TARGET_FLAGS_PATTERN}").any()
+    ):
+        # Distance and flags share the last column, e.g. "  610.9 ............."
+        # (EyeLink 1000 Plus, edf2asc 4.2).
+        # The flags have a fixed width (13 or 17 characters) at the end.
+        width = len(probe.str.extract(rf"({TARGET_FLAGS_PATTERN})$")[0].dropna().iloc[0])
+        target = pd.concat(
+            [
+                extra.iloc[:, -N_TARGET_FIELDS + 1 : -1].astype(str),
+                last.str[:-width],
+                last.str[-width:],
+            ],
+            axis=1,
+        )
+        target = target.apply(lambda col: col.str.strip())
+    elif _join_columns(extra.head(1000)).str.contains(TARGET_FLAGS_PATTERN).any():
+        # Any other layout: find the four fields at the end of the joined line.
+        target = _join_columns(extra).str.extract(
+            rf"(\S+)\s+(\S+)\s+(\S+)\s+({TARGET_FLAGS_PATTERN})\s*$"
+        )
+    else:
+        return None
+
+    target.columns = ["target_x", "target_y", "target_distance", "flags"]
+    is_flags = target["flags"].str.fullmatch(TARGET_FLAGS_PATTERN).fillna(False)
+    target.loc[~is_flags, :] = np.nan
+    for col in ["target_x", "target_y", "target_distance"]:
+        values = pd.to_numeric(target[col], errors="coerce")
+        target[col] = values.mask(values == EYELINK_MISSING_DATA)
+
+    # Status string -> bitmask: bit k is set when character k is not "."
+    flags = target["flags"].fillna("").str.pad(17, side="right", fillchar=".")
+    chars = flags.to_numpy(dtype="U17").view(np.uint32).reshape(-1, 17)
+    bitmask = (chars != ord(".")) @ (1 << np.arange(17))
+    target["target_flags"] = pd.array(bitmask, dtype="Int64")
+    target.loc[target["flags"].isna(), "target_flags"] = pd.NA
+
+    return target.drop(columns="flags")
+
+
+def _add_target_columns_to_physio_json(json_file: Path) -> None:
+    """Describe the Remote-mode target columns in a _physio.json sidecar."""
+    with json_file.open() as f:
+        content = json.load(f)
+    content["Columns"] = content["Columns"] + list(REMOTE_TARGET_COLUMNS)
+    content.update(REMOTE_TARGET_COLUMNS)
+    with json_file.open("w") as f:
+        json.dump(content, f, indent=4)
+
+
+def _remote_target_columns(
+    samples: pd.DataFrame, output_dir: Path, input_file: Path
+) -> pd.DataFrame | None:
+    """Return Remote-mode target columns, and describe them in the physio sidecars."""
+    target = _extract_target_columns(samples)
+    if target is None:
+        return None
+
+    e2b_log.info("Remote mode detected: keeping target sticker columns.")
+    for recording in ["eye1", "eye2"]:
+        json_file = generate_output_filename(
+            output_dir=output_dir,
+            input_file=input_file,
+            suffix=f"_recording-{recording}_physio",
+            extension="json",
+        )
+        if json_file.exists():
+            _add_target_columns_to_physio_json(json_file)
+    return target
+
+
+def _write_samples_tsv(
+    samples_eye: pd.DataFrame, output_dir: Path, input_file: Path, recording: str
+) -> None:
+    """Write one eye's samples to _recording-<eye>_physio.tsv.gz."""
+    output_filename = generate_output_filename(
+        output_dir=output_dir,
+        input_file=input_file,
+        suffix=f"_recording-{recording}_physio",
+        extension="tsv.gz",
+    )
+    content = samples_eye.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
+    with gzip.open(output_filename, "wb") as f:
+        f.write(content.encode())
+
+    e2b_log.info(f"file generated: {output_filename}")
 
 
 def _load_asc_file(events_asc_file: str | Path) -> list[str]:
@@ -551,36 +691,23 @@ def edf2bids(
         .replace(".", np.nan, regex=False)
     )
 
-    if _2eyesmode(df_ms_reduced):
-        samples_eye2 = pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
+    # Remote mode: target sticker columns (None otherwise; same for both eyes)
+    target = _remote_target_columns(samples, output_dir, input_file)
 
     # %%
     # Samples to eye_physio.tsv.gz
 
-    output_filename_eye1 = generate_output_filename(
-        output_dir=output_dir,
-        input_file=input_file,
-        suffix="_recording-eye1_physio",
-        extension="tsv.gz",
-    )
-    content = samples_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-    with gzip.open(output_filename_eye1, "wb") as f:
-        f.write(content.encode())
-
-    e2b_log.info(f"file generated: {output_filename_eye1}")
+    samples_eye1 = pd.concat([samples_eye1, target], axis=1)
+    _write_samples_tsv(samples_eye1, output_dir, input_file, recording="eye1")
 
     if _2eyesmode(df_ms_reduced):
-        output_filename_eye2 = generate_output_filename(
-            output_dir=output_dir,
-            input_file=input_file,
-            suffix="_recording-eye2_physio",
-            extension="tsv.gz",
+        samples_eye2 = (
+            pd.DataFrame(samples.iloc[:, [0, 4, 5, 6]])
+            .map(lambda x: x.strip() if isinstance(x, str) else x)
+            .replace(".", np.nan, regex=False)
         )
-        content = samples_eye2.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-        with gzip.open(output_filename_eye2, "wb") as f:
-            f.write(content.encode())
-
-        e2b_log.info(f"file generated: {output_filename_eye2}")
+        samples_eye2 = pd.concat([samples_eye2, target], axis=1)
+        _write_samples_tsv(samples_eye2, output_dir, input_file, recording="eye2")
 
     # MESSAGES AND PHYSIOEVENTS #
     # %%
