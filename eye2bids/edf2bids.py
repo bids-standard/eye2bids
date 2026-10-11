@@ -136,8 +136,16 @@ def _convert_edf_to_asc_samples(input_file: str | Path) -> Path:
     return Path(samples_asc_file).with_suffix(".asc")
 
 
+def _reccfg_eye(df: pd.DataFrame) -> str:
+    """Return the eye token (L, R or LR): the last field of the first RECCFG message."""
+    row = df[df[2] == "RECCFG"]
+    if row.empty:
+        return ""
+    return str(row.iloc[0].dropna().iloc[-1])
+
+
 def _2eyesmode(df: pd.DataFrame) -> bool:
-    eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
+    eye = _reccfg_eye(df)
     two_eyes = eye == "LR"
     return two_eyes
 
@@ -211,7 +219,7 @@ def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
 
 
 def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
-    eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
+    eye = _reccfg_eye(df)
     recorded_eye_map: dict[str, str | list[str]] = {
         "L": "Left",
         "R": "Right",
