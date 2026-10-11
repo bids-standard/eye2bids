@@ -141,7 +141,7 @@ def test_edf_end_to_end(eyelink_test_data_dir):
     expected_events_sidecar = output_dir / f"{input_file.stem}_events.json"
     with expected_events_sidecar.open() as f:
         events = json.load(f)
-    assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
+    assert events["StimulusPresentation"]["ScreenResolution"] == [1920, 1080]
 
     expected_data_sidecar = output_dir / f"{input_file.stem}_recording-eye1_physio.json"
     with expected_data_sidecar.open() as f:
@@ -189,7 +189,7 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     expected_events_sidecar_eye1 = output_dir / f"{input_file.stem}_events.json"
     with expected_events_sidecar_eye1.open() as f:
         events = json.load(f)
-    assert events["StimulusPresentation"]["ScreenResolution"] == [1919, 1079]
+    assert events["StimulusPresentation"]["ScreenResolution"] == [1920, 1080]
 
     expected_data_sidecar_eye1 = (
         output_dir / f"{input_file.stem}_recording-eye1_physio.json"
@@ -293,12 +293,12 @@ def test_extract_CalibrationType(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", [1919, 1079]),
-        ("lt", [1919, 1079]),
-        ("pitracker", [1919, 1079]),
-        ("satf", [1919, 1079]),
-        ("vergence", [1919, 1079]),
-        ("2eyes", [1919, 1079]),
+        ("emg", [1920, 1080]),
+        ("lt", [1920, 1080]),
+        ("pitracker", [1920, 1080]),
+        ("satf", [1920, 1080]),
+        ("vergence", [1920, 1080]),
+        ("2eyes", [1920, 1080]),
     ],
 )
 def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
@@ -306,6 +306,19 @@ def test_extract_ScreenResolution(folder, expected, eyelink_test_data_dir):
     asc_file = asc_test_files(input_dir=input_dir, suffix="*_events")[0]
     df_ms_reduced = _load_asc_file_as_reduced_df(asc_file)
     assert _extract_ScreenResolution(df_ms_reduced) == expected
+
+
+@pytest.mark.parametrize(
+    "gaze_coords, expected",
+    [
+        ("0.00 0.00 1919.00 1079.00", [1920, 1080]),
+        ("0.00 0.00 1279.00 1023.00", [1280, 1024]),
+    ],
+)
+def test_extract_ScreenResolution_from_gaze_coords(gaze_coords, expected):
+    lines = ["MSG 1 RECCFG CR 1000 2 1 L", f"MSG 1 GAZE_COORDS {gaze_coords}"]
+    df = pd.DataFrame([line.split() for line in lines]).iloc[:, 2:]
+    assert _extract_ScreenResolution(df) == expected
 
 
 @pytest.mark.parametrize(

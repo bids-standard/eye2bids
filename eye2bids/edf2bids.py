@@ -223,14 +223,16 @@ def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
 
 
 def _extract_ScreenResolution(df: pd.DataFrame) -> list[int]:
-    list_res = (
-        (df[df[2] == "GAZE_COORDS"])
-        .iloc[0:1, 3:5]
-        .to_string(header=False, index=False)
-        .replace(".00", "")
-        .split(" ")
+    """Return the screen resolution in pixels as [width, height].
+
+    GAZE_COORDS gives the pixel coordinates of the screen's
+    left, top, right and bottom edges, e.g. "0.00 0.00 1919.00 1079.00"
+    for a 1920 x 1080 screen, so the size is (right - left + 1).
+    """
+    left, top, right, bottom = (
+        float(value) for value in df[df[2] == "GAZE_COORDS"].iloc[0, 1:5]
     )
-    return [eval(i) for i in list_res]
+    return [round(right - left) + 1, round(bottom - top) + 1]
 
 
 def _extract_StartTime(events: list[str]) -> int:
