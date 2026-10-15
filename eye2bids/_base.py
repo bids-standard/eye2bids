@@ -20,7 +20,7 @@ class BasePhysioEventsJson(dict[str, Any]):
     def __init__(self) -> None:
         self["Columns"] = ["onset", "duration", "trial_type", "blink", "message"]
         self["Description"] = "Messages logged by the measurement device"
-        self["ForeignIndexColumn"] = "timestamp"
+        self["OnsetSource"] = "timestamp"
 
         self["blink"] = {
             "Description": "Gives status of the eye.",
@@ -161,13 +161,9 @@ class BasePhysioJson(dict[str, Any]):
             return None
 
         self["SoftwareVersion"] = metadata.get("SoftwareVersion")
-        self["EyeCameraSettings"] = metadata.get("EyeCameraSettings")
         self["EyeTrackerDistance"] = metadata.get("EyeTrackerDistance")
-        self["FeatureDetectionSettings"] = metadata.get("FeatureDetectionSettings")
-        self["GazeMappingSettings"] = metadata.get("GazeMappingSettings")
         self["RawDataFilters"] = metadata.get("RawDataFilters")
         self["SampleCoordinateSystem"] = metadata.get("SampleCoordinateSystem")
-        self["ScreenAOIDefinition"] = metadata.get("ScreenAOIDefinition")
 
     def output_filename(self, recording: str | None = None) -> str:
         """Generate output filename."""

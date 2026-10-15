@@ -428,7 +428,6 @@ def generate_physio_json(
     base_json["SamplingFrequency"] = _extract_SamplingFrequency(df_ms_reduced)
 
     base_json["StartTime"] = _extract_StartTime(events)
-    base_json["StopTime"] = _extract_StopTime(events)
 
     if base_json.has_calibration:
         base_json["EyeTrackingMethod"] = _extract_EyeTrackingMethod(events)
