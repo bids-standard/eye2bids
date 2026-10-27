@@ -186,6 +186,34 @@ def _extract_AverageCalibrationError(df: pd.DataFrame) -> list[float]:
     return ((_validations(df)[[9]]).astype(float)).to_numpy().tolist()
 
 
+def _last_validation_errors(
+    df: pd.DataFrame, eye: str, nth_eye: int = 0, n_eyes: int = 1
+) -> tuple[float, float] | None:
+    """Return (average, maximal) error in degrees of the last validation of one eye.
+
+    BIDS wants a single number for AverageCalibrationError and MaximalCalibrationError,
+    so when there were several validations, the last one (the one in force when the
+    recording started) is used.
+
+    Each validation message names the eye it is for, e.g.
+    ``!CAL VALIDATION HV13 R RIGHT GOOD ERROR 0.31 avg. 0.87 max ...``.
+    If a file's messages don't, fall back to the order of the messages
+    (with two eyes they alternate: left, right, left, right, ...).
+    """
+    validations = _validations(df)
+    if validations.empty:
+        return None
+    eye_column = validations[6].astype(str).str.lower()
+    if eye_column.isin(["left", "right"]).all():
+        validations = validations[eye_column == eye]
+    else:
+        validations = validations.iloc[nth_eye::n_eyes]
+    if validations.empty:
+        return None
+    last = validations.iloc[-1]
+    return float(last[9]), float(last[11])
+
+
 def _extract_ManufacturersModelName(events: list[str]) -> str:
     return (
         " ".join([ml for ml in events if ml.startswith("** EYELINK")])
@@ -213,9 +241,9 @@ def _extract_SamplingFrequency(df: pd.DataFrame) -> int:
 def _extract_RecordedEye(df: pd.DataFrame) -> str | list[str]:
     eye = df[df[2] == "RECCFG"].iloc[0:1, 5:6].to_string(header=False, index=False)
     recorded_eye_map: dict[str, str | list[str]] = {
-        "L": "Left",
-        "R": "Right",
-        "LR": ["Left", "Right"],
+        "L": "left",
+        "R": "right",
+        "LR": ["left", "right"],
     }
     if eye in recorded_eye_map:
         return recorded_eye_map[eye]
@@ -265,6 +293,16 @@ def _extract_StopTime(events: list[str]) -> int:
              for future eyetracking experiments.\n"""
         )
     return StopTime[-1]
+
+
+def _write_tsv_gz(filename: str | Path, content: str) -> None:
+    """Write text to a .gz file without a file name or modification time in its header.
+
+    Python's gzip.open stores both, so the same data give different bytes every time;
+    the BIDS validator warns about them (GZIP_HEADER_FILENAME, GZIP_HEADER_MTIME).
+    gzip.compress writes no file name, and mtime=0 leaves the time out.
+    """
+    Path(filename).write_bytes(gzip.compress(content.encode(), mtime=0))
 
 
 def _load_asc_file(events_asc_file: str | Path) -> list[str]:
@@ -451,20 +489,17 @@ def generate_physio_json(
         }
 
     if base_json.has_validation:
-        metadata_eye1["AverageCalibrationError"] = _extract_AverageCalibrationError(
-            df_ms
-        )[::2]
-        metadata_eye1["MaximalCalibrationError"] = _extract_MaximalCalibrationError(
-            df_ms
-        )[::2]
-
         if base_json.two_eyes:
-            metadata_eye2["AverageCalibrationError"] = _extract_AverageCalibrationError(
-                df_ms
-            )[1::2]
-            metadata_eye2["MaximalCalibrationError"] = _extract_MaximalCalibrationError(
-                df_ms
-            )[1::2]
+            eyes = [(metadata_eye1, "left", 0), (metadata_eye2, "right", 1)]
+        else:
+            eyes = [(metadata_eye1, metadata_eye1["RecordedEye"], 0)]
+        for metadata, eye, nth_eye in eyes:
+            errors = _last_validation_errors(
+                df_ms, eye=eye, nth_eye=nth_eye, n_eyes=len(eyes)
+            )
+            if errors is not None:
+                metadata["AverageCalibrationError"] = errors[0]
+                metadata["MaximalCalibrationError"] = errors[1]
 
     base_json.write(output_dir=output_dir, recording="eye1", extra_metadata=metadata_eye1)
     e2b_log.info(f"file generated: {base_json.output_filename()}")
@@ -564,8 +599,7 @@ def edf2bids(
         extension="tsv.gz",
     )
     content = samples_eye1.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-    with gzip.open(output_filename_eye1, "wb") as f:
-        f.write(content.encode())
+    _write_tsv_gz(output_filename_eye1, content)
 
     e2b_log.info(f"file generated: {output_filename_eye1}")
 
@@ -577,8 +611,7 @@ def edf2bids(
             extension="tsv.gz",
         )
         content = samples_eye2.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-        with gzip.open(output_filename_eye2, "wb") as f:
-            f.write(content.encode())
+        _write_tsv_gz(output_filename_eye2, content)
 
         e2b_log.info(f"file generated: {output_filename_eye2}")
 
@@ -601,13 +634,12 @@ def edf2bids(
             suffix="_recording-eye1_physioevents",
             extension="tsv.gz",
         )
-        if _extract_RecordedEye(df_ms_reduced) == "Left":
+        if _extract_RecordedEye(df_ms_reduced) == "left":
             data_to_save = physioevents_eye1
-        elif _extract_RecordedEye(df_ms_reduced) == "Right":
+        elif _extract_RecordedEye(df_ms_reduced) == "right":
             data_to_save = physioevents_eye2
         content = data_to_save.to_csv(sep="\t", index=False, na_rep="n/a", header=None)
-        with gzip.open(output_eventsfilename_eye1, "wb") as f:
-            f.write(content.encode())
+        _write_tsv_gz(output_eventsfilename_eye1, content)
 
         e2b_log.info(f"file generated: {output_eventsfilename_eye1}")
 
@@ -621,8 +653,7 @@ def edf2bids(
         content = physioevents_eye1.to_csv(
             sep="\t", index=False, na_rep="n/a", header=None
         )
-        with gzip.open(output_eventsfilename_eye1, "wb") as f:
-            f.write(content.encode())
+        _write_tsv_gz(output_eventsfilename_eye1, content)
 
         e2b_log.info(f"file generated: {output_eventsfilename_eye1}")
 
@@ -635,8 +666,7 @@ def edf2bids(
         content = physioevents_eye2.to_csv(
             sep="\t", index=False, na_rep="n/a", header=None
         )
-        with gzip.open(output_eventsfilename_eye2, "wb") as f:
-            f.write(content.encode())
+        _write_tsv_gz(output_eventsfilename_eye2, content)
 
         e2b_log.info(f"file generated: {output_eventsfilename_eye2}")
 

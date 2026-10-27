@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 
@@ -19,9 +20,11 @@ from eye2bids.edf2bids import (
     _extract_RecordedEye,
     _extract_SamplingFrequency,
     _extract_ScreenResolution,
+    _last_validation_errors,
     _load_asc_file,
     _load_asc_file_as_df,
     _load_asc_file_as_reduced_df,
+    _write_tsv_gz,
     edf2bids,
 )
 
@@ -147,7 +150,7 @@ def test_edf_end_to_end(eyelink_test_data_dir):
     with expected_data_sidecar.open() as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 500
-    assert eyetrack["RecordedEye"] == "Right"
+    assert eyetrack["RecordedEye"] == "right"
 
     _check_output_content(output_dir, input_file)
 
@@ -197,8 +200,9 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     with expected_data_sidecar_eye1.open() as f:
         eyetrack = json.load(f)
     assert eyetrack["SamplingFrequency"] == 1000
-    assert eyetrack["AverageCalibrationError"] == [[0.29]]
-    assert eyetrack["RecordedEye"] == "Left"
+    assert eyetrack["AverageCalibrationError"] == 0.29
+    assert eyetrack["MaximalCalibrationError"] == 0.62
+    assert eyetrack["RecordedEye"] == "left"
 
     _check_output_exists(output_dir, input_file, eye=2)
     _check_output_content(output_dir, input_file, eye=2)
@@ -208,8 +212,9 @@ def test_edf_end_to_end_2eyes(eyelink_test_data_dir):
     )
     with expected_data_sidecar_eye2.open() as f:
         eyetrack = json.load(f)
-    assert eyetrack["AverageCalibrationError"] == [[0.35]]
-    assert eyetrack["RecordedEye"] == "Right"
+    assert eyetrack["AverageCalibrationError"] == 0.35
+    assert eyetrack["MaximalCalibrationError"] == 1.21
+    assert eyetrack["RecordedEye"] == "right"
 
 
 @pytest.mark.skipif(not _check_edf2asc_present(), reason="edf2asc missing")
@@ -387,13 +392,13 @@ def test_extract_DeviceSerialNumber(folder, expected, eyelink_test_data_dir):
 @pytest.mark.parametrize(
     "folder, expected",
     [
-        ("emg", "Right"),
-        ("lt", "Left"),
-        ("pitracker", "Right"),
-        ("rest", "Left"),
-        ("satf", "Right"),
-        ("vergence", ["Left", "Right"]),
-        ("2eyes", ["Left", "Right"]),
+        ("emg", "right"),
+        ("lt", "left"),
+        ("pitracker", "right"),
+        ("rest", "left"),
+        ("satf", "right"),
+        ("vergence", ["left", "right"]),
+        ("2eyes", ["left", "right"]),
     ],
 )
 def test_extract_RecordedEye(folder, expected, eyelink_test_data_dir):
@@ -538,3 +543,69 @@ def test_physioevents_value(folder, expected, eyelink_test_data_dir):
     )
     physioevents = pd.read_csv(expected_eyetrackphysio_tsv, sep="\t", header=None)
     assert physioevents.iloc[4:11, 2].tolist() == expected
+
+
+def _validation_df(lines: list[str]) -> pd.DataFrame:
+    """Messages as eye2bids reads them from an _events.asc file."""
+    return pd.DataFrame([line.split() for line in lines])
+
+
+@pytest.mark.parametrize(
+    "lines, eye, n_eyes, nth_eye, expected",
+    [
+        # one eye, validated twice: the last validation is the one that counts
+        (
+            [
+                "MSG 100 !CAL VALIDATION HV13 R RIGHT POOR ERROR 1.20 avg. 2.50 max",
+                "MSG 200 !CAL VALIDATION HV13 R RIGHT GOOD ERROR 0.31 avg. 0.87 max",
+            ],
+            "right",
+            1,
+            0,
+            (0.31, 0.87),
+        ),
+        # two eyes: each eye gets its own last validation
+        (
+            [
+                "MSG 100 !CAL VALIDATION HV9 LR LEFT GOOD ERROR 0.29 avg. 0.62 max",
+                "MSG 101 !CAL VALIDATION HV9 LR RIGHT GOOD ERROR 0.35 avg. 1.21 max",
+            ],
+            "right",
+            2,
+            1,
+            (0.35, 1.21),
+        ),
+        # messages that don't name the eye: fall back to their order
+        (
+            [
+                "MSG 100 !CAL VALIDATION HV9 LR X GOOD ERROR 0.29 avg. 0.62 max",
+                "MSG 101 !CAL VALIDATION HV9 LR X GOOD ERROR 0.35 avg. 1.21 max",
+            ],
+            "left",
+            2,
+            0,
+            (0.29, 0.62),
+        ),
+    ],
+)
+def test_last_validation_errors(lines, eye, n_eyes, nth_eye, expected):
+    df = _validation_df(lines)
+    assert (
+        _last_validation_errors(df, eye=eye, nth_eye=nth_eye, n_eyes=n_eyes) == expected
+    )
+
+
+def test_last_validation_errors_none():
+    df = _validation_df(["MSG 100 !CAL CALIBRATION HV13 R RIGHT GOOD"])
+    assert _last_validation_errors(df, eye="right") is None
+
+
+def test_write_tsv_gz_has_no_name_or_time(tmp_path):
+    """BIDS validator: GZIP_HEADER_FILENAME and GZIP_HEADER_MTIME."""
+    out = tmp_path / "x_physio.tsv.gz"
+    _write_tsv_gz(out, "1\t2\n3\t4\n")
+    header = out.read_bytes()[:10]
+    assert header[3] & 0x08 == 0  # FNAME flag not set
+    assert int.from_bytes(header[4:8], "little") == 0  # MTIME = 0
+    with gzip.open(out, "rt") as f:
+        assert f.read() == "1\t2\n3\t4\n"
