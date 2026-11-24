@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = ["hatchling", "hatch-vcs"]
 
 [project]
-authors = [{name = "eye2bids developers"}]
+authors = [{ name = "eye2bids developers" }]
 classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -30,7 +30,7 @@ dependencies = [
 ]
 description = "eyetracking data bids converter in Python"
 dynamic = ["version"]
-license = {text = "MIT"}
+license = { text = "MIT" }
 name = "eye2bids"
 readme = "README.md"
 requires-python = ">=3.9"
