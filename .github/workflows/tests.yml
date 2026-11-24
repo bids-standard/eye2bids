@@ -40,8 +40,8 @@ jobs:
                 sudo add-apt-repository universe
                 sudo apt-get update
                 sudo apt-get install ca-certificates
-                sudo apt-key adv --fetch-keys https://apt.sr-research.com/SRResearch_key
-                sudo add-apt-repository 'deb [arch=amd64] https://apt.sr-research.com SRResearch main'
+                curl -fsSL https://apt.sr-research.com/SRResearch_key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/SRResearch_key.gpg
+                sudo curl -fsSL https://apt.sr-research.com/SR_Research_repo.sources -o /etc/apt/sources.list.d/SR_Research_repo.sources
                 sudo apt update
                 sudo apt install eyelink-display-software
                 python -m pip install --upgrade pip
